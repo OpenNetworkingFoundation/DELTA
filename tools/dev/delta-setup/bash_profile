@@ -25,6 +25,6 @@ export PATH="$PATH:$DELTA_ROOT/bin"
 export PATH="$PATH:$MAVEN/bin"
 
 # For file transmission, [user id]@[ip address] is used
-export DELTA_APP=nss@192.168.11.102
-export DELTA_CHANNEL=nss@192.168.11.103
-export DELTA_HOST=nss@192.168.11.104
+export DELTA_APP=vagrant@10.100.100.11
+export DELTA_CHANNEL=vagrant@10.100.100.12
+export DELTA_HOST=vagrant@10.100.100.13

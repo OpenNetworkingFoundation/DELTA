@@ -1,0 +1,7 @@
+#!/bin/bash
+
+ssh $DELTA_APP "
+sudo apt-get install -y python-pip python-dev &&
+sudo pip install ryu &&
+sudo pip install -U setuptools msgpack-python netaddr oslo.config ovs routes six tinyrpc webob &&
+sudo pip install eventlet==0.18.2"
