@@ -1,6 +1,7 @@
 package org.deltaproject.webui;
 
 import org.deltaproject.manager.core.AttackConductor;
+import org.deltaproject.manager.core.Configuration;
 import org.deltaproject.manager.core.ControllerManager;
 import org.deltaproject.manager.testcase.TestSwitchCase;
 import org.deltaproject.manager.utils.AgentLogger;
@@ -18,7 +19,7 @@ public class TestCaseExecutor extends Thread {
     private AttackConductor conductor;
     private TestQueue queue = TestQueue.getInstance();
     private boolean running;
-    private static final Logger log = LoggerFactory.getLogger(ControllerManager.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(TestCaseExecutor.class);
 
     public TestCaseExecutor(AttackConductor conductor) {
         this.conductor = conductor;
@@ -31,9 +32,9 @@ public class TestCaseExecutor extends Thread {
             if (!queue.isEmpty()) {
 
                 // apply configuration from Web UI
-                conductor.refreshConfig();
-
                 TestCase test = queue.getNext();
+                log.info(test.getcasenum() + " - " + test.getName() + " - " + test.getDesc());
+                conductor.refreshConfig(test.getConfiguration());
                 try {
                     queue.setRunningTestCase(test);
                     conductor.executeTestCase(test);

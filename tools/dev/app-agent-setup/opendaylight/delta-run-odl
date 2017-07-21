@@ -1,0 +1,52 @@
+#!/bin/bash
+odl_version=${1}
+
+# Prints usage help
+function usage {
+    echo "Usage: delta-run-odl <odl-version>" >&2
+    echo "* supported OpenDaylight version: helium, carbon" >&2
+    exit 1
+}
+
+# Configure environment variables
+
+ODL_CMD=''
+ODL_DIR=''
+JDK_VERSION=''
+
+[ $# -lt 1 ] && usage
+if [ -z $DELTA_ROOT ]; then
+    echo "* Please setup DELTA bash_profile in your .bashrc"
+    exit 1
+fi
+
+case $odl_version in
+    helium)
+        echo "Starting ODL helium on App Agent..."
+        ODL_DIR='odl-helium-sr3'
+        ODL_CMD='sudo odl-helium-sr3/opendaylight/distribution/opendaylight/target/distribution.opendaylight-osgipackage/opendaylight/run.sh -Xmx4g'
+        JDK_VERSION='java-7-oracle'
+        ;;
+    carbon)
+        echo "Starting ODL carbon on App Agent..."
+        ODL_DIR='distribution-karaf-0.6.0-Carbon'
+        ODL_CMD='distribution-karaf-0.6.0-Carbon/bin/karaf'
+        JDK_VERSION='java-8-oracle'
+        ;;
+    *) usage;;
+esac
+
+# Check if ODL exists on the AppAgent
+directory_check=$(ssh $DELTA_APP "[ -d $ODL_DIR ] && echo exists || echo does not exists")
+
+if [[ "$directory_check" =~ "not" ]]; then
+    echo "Please install ODL on APP Agent"
+    exit 1
+fi
+
+# Run ODL
+ssh $DELTA_APP "
+export JAVA_HOME=/usr/lib/jvm/$JDK_VERSION
+sudo update-java-alternatives --set $JDK_VERSION
+$ODL_CMD
+"

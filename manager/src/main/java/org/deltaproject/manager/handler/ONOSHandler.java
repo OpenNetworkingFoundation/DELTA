@@ -65,16 +65,20 @@ public class ONOSHandler implements ControllerHandler {
             this.currentPID = (Integer) value;
 
             stdIn = new BufferedWriter(new OutputStreamWriter(proc.getOutputStream()));
+//            stdOut = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 
             Thread.sleep(10000);
 
+            String line = null;
             do {
-                str = AgentLogger.readLogFile(AgentLogger.APP_AGENT);
+//                line = stdOut.readLine();
+                line = AgentLogger.getTemp();
+                Thread.sleep(500);
             }
-            while (!str.contains("Welcome"));
+            while (!line.contains("Welcome"));
 
             isRunning = true;
-            log.info("ONOSHandler is activated");
+            log.info("ONOS is activated");
 
 //            else {
 //                log.info("Failed to start ONOSHandler");
@@ -105,6 +109,8 @@ public class ONOSHandler implements ControllerHandler {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        AgentLogger.setTemp("");
 
         return true;
     }

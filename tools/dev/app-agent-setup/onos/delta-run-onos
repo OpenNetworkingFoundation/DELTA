@@ -31,13 +31,18 @@ case $onos_version in
 esac
 
 # Check if ONOS exists on the AppAgent
-onos_directory=/tmp/onos-$onos_version
+onos_directory=~/onos-$onos_version
 directory_check=$(ssh $DELTA_APP "[ -d $onos_directory ] && echo exists || echo does not exists")
 
-[[ "$directory_check" =~ "not" ]] && $DELTA_ROOT/tools/dev/app-agent-setup/onos/delta-setup-onos $onos_version
+if [[ "$directory_check" =~ "not" ]]; then
+    echo "Please install ONOS via delta-setup-onos"
+    exit 1
+fi
 
+JDK_VERSION='java-8-oracle'
 # Run ONOS
 ssh $DELTA_APP "
+sudo update-java-alternatives --set $JDK_VERSION
 export JAVA_HOME=/usr/lib/jvm/java-8-oracle
 export ONOS_APPS=drivers,openflow,proxyarp,mobility,fwd
 $onos_directory/bin/onos-service clean

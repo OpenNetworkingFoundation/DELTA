@@ -1,5 +1,7 @@
 package org.deltaproject.webui;
 
+import org.deltaproject.manager.core.Configuration;
+
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -125,6 +127,7 @@ public class TestCase {
     private Status status;
     private Date time;
     private TestResult result;
+    private Configuration configuration;
 
     public TestCase(String casenum) {
         this.casenum = casenum;
@@ -224,6 +227,14 @@ public class TestCase {
 
     public TestResult getResult() {
         return result;
+    }
+
+    public void setConfiguration(Configuration configuration) {
+        this.configuration = configuration;
+    }
+
+    public Configuration getConfiguration() {
+        return configuration;
     }
 
     @Override

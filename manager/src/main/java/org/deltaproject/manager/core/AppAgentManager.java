@@ -28,7 +28,7 @@ public class AppAgentManager {
     private static final Logger log = LoggerFactory.getLogger(AppAgentManager.class);
 
     public AppAgentManager() {
-        this.targetController = cfg.getTargetController();
+        this.targetController = cfg.getTARGET_CONTROLLER();
     }
 
     public void closeSocket() {

@@ -191,14 +191,14 @@ public class AMInterface extends Thread {
             System.out.println("[App-Agent] Closing...");
         } catch (Exception e) {
             // if any error occurs
-            e.printStackTrace();
+//            e.printStackTrace();
         } finally {
             try {
                 dis.close();
                 dos.close();
             } catch (IOException e) {
                 // TODO Auto-generated catch block
-                e.printStackTrace();
+//                e.printStackTrace();
             }
         }
     }

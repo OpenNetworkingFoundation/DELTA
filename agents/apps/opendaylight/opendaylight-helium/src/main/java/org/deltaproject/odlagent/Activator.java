@@ -103,7 +103,7 @@ public class Activator extends ComponentActivatorAbstractBase {
 
     /* A-6-M */
     public String testEventListenerUnsubscription(String input) {
-        System.out.println("[ATTACK] Event Listner Unsubscription");
+        System.out.println("[App-Agent] Event Listener Unsubscription");
         List<ContainerServiceDependency> list = this.c.getDependencies();
 
         String removed = "";
@@ -131,18 +131,18 @@ public class Activator extends ComponentActivatorAbstractBase {
                         // ct.setServiceProperties(props_new);
                         ServiceRegistration sr = ct.getServiceRegistration();
                         Bundle bd = sr.getReference().getBundle();
-                        System.out.println(bd.getSymbolicName());
+                        System.out.println("[App-Agent] Unregister " + bd.getSymbolicName());
 
 						/* service unregister */
                         sr.unregister();
                         removed = sr.toString();
 
-                        String[] lists = sr.getReference().getPropertyKeys();
-                        for (String s : lists) {
-                            System.out.println(s + " ");
-                        }
+//                        String[] lists = sr.getReference().getPropertyKeys();
+//                        for (String s : lists) {
+//                            System.out.println(s + " ");
+//                        }
 
-                        System.out.println("d");
+                        System.out.println("After Unregister !!!");
                         List<Dependency> dpl = ct.getDependencies();
                         for (int k = 0; k < dpl.size(); k++) {
                             Dependency dp = dpl.get(k);
@@ -198,6 +198,7 @@ public class Activator extends ComponentActivatorAbstractBase {
     }
 
     public String testApplicationEviction(String target) {
+        System.out.println("[App-Agent] Application Eviction attack");
         String removed = "";
         DependencyManager manager = this.c.getDependencyManager();
         BundleContext ctx = manager.getBundleContext();
@@ -207,7 +208,7 @@ public class Activator extends ComponentActivatorAbstractBase {
             Bundle bd = blist[i];
             String bdName = bd.getSymbolicName();
             if (bdName.contains(target)) {
-                System.out.println(bd.getBundleId() + ":" + bdName);
+                System.out.println("[App-Agent] Uninstall :" + bd.getBundleId() + ":" + bdName);
 
                 removed = bdName;
                 try {
@@ -275,8 +276,6 @@ public class Activator extends ComponentActivatorAbstractBase {
             this.c = c;
             this.imp = imp;
             this.containerName = containerName;
-
-            testServiceUnregAttack("arp");
         }
     }
 }

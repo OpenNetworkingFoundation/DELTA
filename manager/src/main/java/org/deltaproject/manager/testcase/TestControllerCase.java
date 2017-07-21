@@ -121,8 +121,8 @@ public class TestControllerCase {
     * controller with a different version.
     */
     public void testMalformedVersionNumber(TestCase test) {
-        String info = test.getcasenum() + " - Malformed Version Number - Test for controller protection against communication with mismatched OpenFlow versions";
-        log.info(info);
+//        String info = test.getcasenum() + " - Malformed Version Number - Test for controller protection against communication with mismatched OpenFlow versions";
+//        log.info(info);
 
         initController();
 

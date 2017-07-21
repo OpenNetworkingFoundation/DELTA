@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
 public class OpenDaylightHandler implements ControllerHandler {
@@ -22,7 +23,6 @@ public class OpenDaylightHandler implements ControllerHandler {
     public String sshAddr = "";
 
     private int currentPID = -1;
-    private int bundleID;
 
     private BufferedWriter stdIn;
     private BufferedReader stdOut;
@@ -31,6 +31,10 @@ public class OpenDaylightHandler implements ControllerHandler {
 
     private String controllerPath;
     private String user;
+
+    private int attackCount = 1;
+    private int indexController = -1;
+    private int indexApp = -1;
 
     public OpenDaylightHandler(String path, String v, String ssh) {
         this.version = v;
@@ -51,14 +55,16 @@ public class OpenDaylightHandler implements ControllerHandler {
         try {
             if (version.equals("helium")) {
                 user = sshAddr.substring(0, sshAddr.indexOf('@'));
-                controllerPath = "/home/" + user + "/odl-helium-sr3/opendaylight/distribution/opendaylight/handler/distribution.opendaylight-osgipackage/opendaylight/run.sh -Xmx2g";
-                cmdArray = new String[]{"ssh", sshAddr, "sudo", controllerPath};
-
-            } else if (version.equals("carbon")) {
-                user = sshAddr.substring(0, sshAddr.indexOf('@'));
-                controllerPath = "/home/" + user + "/distribution-karaf-0.6.0-Carbon/bin/karaf";
-                cmdArray = new String[]{"ssh", sshAddr, controllerPath};
+//                controllerPath = "/home/" + user + "/odl-helium-sr3/opendaylight/distribution/opendaylight/handler/distribution.opendaylight-osgipackage/opendaylight/run.sh -Xmx2g";
             }
+//                cmdArray = new String[]{"ssh", sshAddr, "sudo", controllerPath};
+//
+//            } else if (version.equals("carbon")) {
+//                user = sshAddr.substring(0, sshAddr.indexOf('@'));
+//                controllerPath = "/home/" + user + "/distribution-karaf-0.6.0-Carbon/bin/karaf";
+//                cmdArray = new String[]{"ssh", sshAddr, controllerPath};
+//            }
+            cmdArray = new String[]{System.getenv("DELTA_ROOT") + "/tools/dev/app-agent-setup/opendaylight/delta-run-odl", version};
 
             ProcessBuilder pb = new ProcessBuilder(cmdArray);
             pb.redirectErrorStream(true);
@@ -70,20 +76,24 @@ public class OpenDaylightHandler implements ControllerHandler {
 
             if (version.equals("helium")) {
                 do {
-                    str = AgentLogger.readLogFile(AgentLogger.APP_AGENT);
+//                    str = AgentLogger.readLogFile(AgentLogger.APP_AGENT);
+                    str = AgentLogger.getTemp();
+                    Thread.sleep(1000);
                 }
                 while (!str.contains("initialized successfully"));
             } else if (version.equals("carbon")) {
                 do {
-                    str = AgentLogger.readLogFile(AgentLogger.APP_AGENT);
+//                    str = AgentLogger.readLogFile(AgentLogger.APP_AGENT);
+                    str = AgentLogger.getTemp();
                 }
                 while (!str.contains("shutdown OpenDaylight"));
             }
 
-            installAppAgent();
-
             log.info("OpenDaylight is activated");
 
+            installAppAgent();
+
+            AgentLogger.setTemp("");
 
         } catch (Exception e) {
             log.error(e.toString());
@@ -94,8 +104,8 @@ public class OpenDaylightHandler implements ControllerHandler {
 
     public boolean installAppAgent() {
         boolean isInstalled = false;
+        int bundleID = 0;
 
-        String stdOut = "";
         String successMsg = "";
 
         if (version.equals("helium")) {
@@ -109,15 +119,17 @@ public class OpenDaylightHandler implements ControllerHandler {
             stdIn.flush();
 
             while (!isInstalled) {
-                stdOut = AgentLogger.readLogFile(AgentLogger.APP_AGENT);
-                if (stdOut.contains(successMsg)) {
+
+//                String line = stdOut.readLine();
+                String line = AgentLogger.getTemp();
+                if (line.contains(successMsg)) {
                     isInstalled = true;
 
-                    int idx = stdOut.indexOf(successMsg);
+                    int idx = line.indexOf(successMsg);
                     if (version.equals("helium")) {
-                        this.bundleID = Integer.parseInt(stdOut.substring(idx - 4, idx - 1));
+                        bundleID = Integer.parseInt(line.substring(idx - 4, idx - 1));
                     } else if (version.equals("carbon")) {
-                        this.bundleID = Integer.parseInt(stdOut.substring(idx + successMsg.length()).replace("\n", ""));
+                        bundleID = Integer.parseInt(line.substring(idx + successMsg.length()).replace("\n", ""));
                     }
 
                     stdIn.write("start " + bundleID + "\n");
@@ -134,31 +146,33 @@ public class OpenDaylightHandler implements ControllerHandler {
                 e.printStackTrace();
             }
 
-            if (version.equals("helium")) {
-                // for service chain interference
-                stdIn.write("install file:" + "/home/" + user + "/delta-agent-app-odl-" + version + "-sub-1.0-SNAPSHOT.jar" + "\n");
-                stdIn.flush();
-
-                isInstalled = false;
-                while (!isInstalled) {
-                    stdOut = AgentLogger.readLogFile(AgentLogger.APP_AGENT);
-                    if (stdOut.contains(successMsg)) {
-                        isInstalled = true;
-
-                        int idx = stdOut.indexOf(successMsg);
-                        this.bundleID = Integer.parseInt(stdOut.substring(idx - 4,
-                                idx - 1));
-
-                        stdIn.write("start " + bundleID + "\n");
-                        stdIn.flush();
-                    }
-                }
-            }
+//            if (version.equals("helium")) {
+//                // for service chain interference
+//                stdIn.write("install file:" + "/home/" + user + "/delta-agent-app-odl-" + version + "-sub-1.0-SNAPSHOT.jar" + "\n");
+//                stdIn.flush();
+//
+//                isInstalled = false;
+//                while (!isInstalled) {
+//                    stdOut = AgentLogger.readLogFile(AgentLogger.APP_AGENT);
+//                    if (stdOut.contains(successMsg)) {
+//                        isInstalled = true;
+//
+//                        int idx = stdOut.indexOf(successMsg);
+//                        this.bundleID = Integer.parseInt(stdOut.substring(idx - 4,
+//                                idx - 1));
+//
+//                        stdIn.write("start " + bundleID + "\n");
+//                        stdIn.flush();
+//                    }
+//                }
+//            }
 
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+
+        log.info("OpenDaylight app-agent is installed");
 
         return true;
     }

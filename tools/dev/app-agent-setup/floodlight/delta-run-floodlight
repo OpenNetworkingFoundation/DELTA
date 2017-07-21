@@ -1,0 +1,50 @@
+#!/bin/bash
+floodlight_version=${1}
+
+# Prints usage help
+function usage {
+    echo "Usage: delta-run-onos <floodlight-version>" >&2
+    echo "* supported Floodlight version: 0.91 1.2" >&2
+    exit 1
+}
+
+[ $# -lt 1 ] && usage
+if [ -z $DELTA_ROOT ]; then
+    echo "* Please setup DELTA bash_profile in your .bashrc"
+    exit 1
+fi
+
+FLOODLIGHT_CMD=''
+FLOODLIGHT_DIR=''
+JDK_VERSION=''
+
+case $floodlight_version in
+    0.91)
+        echo "Starting Floodlight 0.91 on AppAgent..."
+        FLOODLIGHT_DIR='floodlgiht-0.91.jar'
+        FLOODLIGHT_CMD='sudo java -jar floodlight-0.91.jar'
+        exit 1
+        ;;
+    1.2)
+        echo "Starting Floodlight 1.2 on AppAgent..."
+        JDK_VERSION='java-8-oracle'
+        FLOODLIGHT_DIR='floodlight-1.2.jar'
+        FLOODLIGHT_CMD='sudo java -jar floodlight-1.2.jar -cf floodlightdefault.properties'
+        ;;
+    *) usage;;
+esac
+
+# Check if Floodlight exists on the AppAgent
+directory_check=$(ssh $DELTA_APP "[ -f $FLOODLIGHT_DIR ] && echo exists || echo does not exists")
+
+if [[ "$directory_check" =~ "not" ]]; then
+    echo "Please install Floodlight on App Agent"
+    exit 1
+fi
+
+# Run Floodlight
+ssh $DELTA_APP "
+sudo update-java-alternatives --set $JDK_VERSION
+export JAVA_HOME=/usr/lib/jvm/$JDK_VERSION
+$FLOODLIGHT_CMD
+"

@@ -21,6 +21,7 @@ public class AgentLogger {
     public final static String HOST_AGENT = "host.log";
 
     public static ArrayList<Thread> loggerList = new ArrayList();
+    public static String temp = "";
 
     public static LoggerThread getLoggerThreadInstance(Process proc, String name) {
         return new LoggerThread(proc, name);
@@ -53,7 +54,9 @@ public class AgentLogger {
                 output = new FileWriter(LOG_PATH + name, true);
                 checkLogDirectory();
                 String line;
+                output.write("=================================================================================\n");
                 while ((line = stderrBr.readLine()) != null) {
+                    temp += line;
                     output.write(line + "\n");
                     output.flush();
                 }
@@ -69,6 +72,7 @@ public class AgentLogger {
                 }
             }
         }
+
     }
 
     public static class RunWhenShuttingDown extends Thread {
@@ -90,7 +94,7 @@ public class AgentLogger {
         File file = new File(path);
         while (!file.exists()) {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -112,5 +116,13 @@ public class AgentLogger {
             dir.mkdirs();
             System.out.println("Directory was created!");
         }
+    }
+
+    public static String getTemp() {
+        return temp;
+    }
+
+    public static void setTemp(String temp) {
+        AgentLogger.temp = temp;
     }
 }

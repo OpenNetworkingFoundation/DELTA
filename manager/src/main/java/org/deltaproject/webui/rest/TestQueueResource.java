@@ -1,5 +1,6 @@
 package org.deltaproject.webui.rest;
 
+import org.deltaproject.manager.core.Configuration;
 import org.deltaproject.webui.TestCase;
 import org.deltaproject.webui.TestCaseDirectory;
 import org.deltaproject.webui.TestQueue;
@@ -44,21 +45,23 @@ public class TestQueueResource {
     @Produces(MediaType.TEXT_PLAIN)
     public Response addTestCases(String indexes) {
 
+        String response = "";
         int count = 0;
         String[] indexList = indexes.split(",");
         for (int i = 0; i < indexList.length; i++) {
             if (TestCaseDirectory.getDirectory().containsKey(indexList[i].trim())) {
                 TestCase testCase = new TestCase(indexList[i].trim());
                 testCase.setStatus(TestCase.Status.QUEUED);
+                testCase.setConfiguration(Configuration.copy());
                 TestQueue.getInstance().push(testCase);
+
+
+                response += testCase.getName() + "\n";
                 count++;
             }
         }
-        if (count > 0) {
-            log.info(count + " test case(s) queued.");
-        }
 
-        return Response.status(201).entity(count + " test(s) has been queued.").build();
+        return Response.status(201).entity(response + "\n" + count + " test(s) has been queued.").build();
     }
 
     @POST
@@ -69,6 +72,7 @@ public class TestQueueResource {
 
         TestQueue testQueue = TestQueue.getInstance();
 
+        int count = 0;
         String[] indexList = indexes.split(",");
         for (int i = 0; i < indexList.length; i++) {
             Integer testCaseIdx = Integer.parseInt(indexList[i].trim());
@@ -80,8 +84,10 @@ public class TestQueueResource {
             } else if (testCase.getStatus() == TestCase.Status.RUNNING) {
                 testQueue.getRunningTestCase();
             }
+
+            count++;
         }
 
-        return Response.status(201).entity("Test(s) has been stoped.").build();
+        return Response.status(201).entity(count + " test(s) has been removed.").build();
     }
 }

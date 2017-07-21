@@ -99,7 +99,7 @@ body.application .return-link:hover,
 
 .fill {
   height: 290px;
-  width: 100%;
+  width: 98%;
   overflow-y: scroll;
   resize: none;
 }

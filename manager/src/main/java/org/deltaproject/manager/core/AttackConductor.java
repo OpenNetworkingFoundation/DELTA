@@ -67,12 +67,12 @@ public class AttackConductor {
 
         testFuzzing = new TestFuzzing(appm, hostm, channelm, controllerm);
         testState = new TestStateDiagram(appm);
+
     }
 
-    public void refreshConfig() {
-        controllerm.setConfig();
-        testSwitchCase.setConfig();
-        this.setTestSwitchCase(new TestSwitchCase(channelm));
+    public void refreshConfig(Configuration cfg) {
+        controllerm.setConfig(cfg);
+        testSwitchCase.setConfig(cfg);
     }
 
     public String showConfig() {
@@ -98,15 +98,15 @@ public class AttackConductor {
             dos.flush();
 
 			/* send configuration to channel agent */
-            String config = "config," + "version:" + cfg.getOFVer() + ",nic:" + cfg.getMitmNIC() + ",port:"
-                    + cfg.getOFPort() + ",controller_ip:" + cfg.getControllerIP() + ",switch_ip:" + cfg.getSwitchIP(0)
-                    + ",handler:dummy" + ",cbench:" + cfg.getCbenchRoot();
+            String config = "config," + "version:" + cfg.getOF_VERSION() + ",nic:" + cfg.getMITM_NIC() + ",port:"
+                    + cfg.getOF_PORT() + ",controller_ip:" + cfg.getCONTROLLER_IP() + ",switch_ip:" + cfg.getSwitchList().get(0)
+                    + ",handler:dummy" + ",cbench:" + cfg.getCBENCH_ROOT();
 
             channelm.write(config);
             log.info("Channel agent connected");
         } else if (agentType.contains("HostAgent")) {
             hostm.setSocket(socket, dos, dis);
-            hostm.write("target:" + cfg.getTargetHost());
+            hostm.write("target:" + cfg.getTARGET_HOST());
             log.info("Host agent connected");
         }
     }
@@ -124,7 +124,7 @@ public class AttackConductor {
         }
         long end = System.currentTimeMillis();
         log.info("Running Time(s) : " + (end - start) / 1000.0);
-        log.info(test.getName() + " is done\n");
+        log.info(test.getName() + " is done\n==============================================================================\n");
     }
 
     public void printAttackList() {

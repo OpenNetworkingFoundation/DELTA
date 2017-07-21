@@ -100,11 +100,11 @@ public class ResultAnalyzer {
                     break;
             }
 
-            if (isSuccess) {
-                test.setResult(FAIL);
-                log.info(test.getcasenum() + ", FAIL");
-                break;
-            }
+//            if (isSuccess) {
+//                test.setResult(FAIL);
+//                log.info(test.getcasenum() + ", FAIL");
+//                break;
+//            }
         }
 
         if (!isSuccess) {

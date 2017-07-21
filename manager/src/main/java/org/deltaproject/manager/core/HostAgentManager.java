@@ -64,7 +64,7 @@ public class HostAgentManager extends Thread {
     public boolean runAgent(String topologyFile) {
         String version;
 
-        if (cfg.getOFVer().equals("1.0")) {
+        if (cfg.getOF_VERSION().equals("1.0")) {
             version = "OpenFlow10";
         } else {
             version = "OpenFlow13";
@@ -76,13 +76,13 @@ public class HostAgentManager extends Thread {
 
             // in the case of all-in-one setting
             if (cfg.getTopologyType().equals("VM")) {
-                cmdArray = new String[] {"ssh", cfg.getHostSSH(), "sudo", "python", topologyFile,
-                        cfg.getControllerIP(), cfg.getOFPort(), cfg.getAMIP(), cfg.getAMPort(), version};
+                cmdArray = new String[] {"ssh", cfg.getHOST_SSH(), "sudo", "python", topologyFile,
+                        cfg.getCONTROLLER_IP(), cfg.getOF_PORT(), cfg.getAM_IP(), cfg.getAM_PORT(), version};
 
             // in the case of hardware setting
             } else if (cfg.getTopologyType().equals("HW")) {
-                cmdArray = new String[] {"ssh", cfg.getHostSSH(), "java", "-jar", "delta-agent-host-1.0-SNAPSHOT.jar", cfg.getAMIP(),
-                        cfg.getAMPort()};
+                cmdArray = new String[] {"ssh", cfg.getHOST_SSH(), "java", "-jar", "delta-agent-host-1.0-SNAPSHOT.jar", cfg.getAM_IP(),
+                        cfg.getAM_PORT()};
             }
 
             ProcessBuilder pb = new ProcessBuilder(cmdArray);
@@ -148,7 +148,7 @@ public class HostAgentManager extends Thread {
 
         if (procPID != -1)
             try {
-                Runtime.getRuntime().exec("ssh " + cfg.getHostSSH() + " sudo arp -d " + cfg.getControllerIP());
+                Runtime.getRuntime().exec("ssh " + cfg.getHOST_SSH() + " sudo arp -d " + cfg.getCONTROLLER_IP());
                 proc = Runtime.getRuntime().exec("sudo kill -9 " + this.procPID);
                 proc.waitFor();
                 procPID = -1;

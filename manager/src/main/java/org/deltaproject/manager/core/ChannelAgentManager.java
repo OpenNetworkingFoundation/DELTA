@@ -66,8 +66,8 @@ public class ChannelAgentManager extends Thread {
     }
 
     public boolean runAgent() {
-        String amAddr = cfg.getAMIP() + " " + cfg.getAMPort();
-        String cmdArray[] = {"ssh", cfg.getChannelSSH(), "sudo", "java", "-jar", "delta-agent-channel-1.0-SNAPSHOT-jar-with-dependencies.jar", amAddr};
+        String amAddr = cfg.getAM_IP() + " " + cfg.getAM_PORT();
+        String cmdArray[] = {"ssh", cfg.getCHANNEL_SSH(), "sudo", "java", "-jar", "delta-agent-channel-1.0-SNAPSHOT-jar-with-dependencies.jar", amAddr};
 //        String cmdArray[] = {"ssh", cfg.getChannelSSH(), "sudo", "java", "-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=15001", "-jar", "delta-agent-channel-1.0-SNAPSHOT-jar-with-dependencies.jar", amAddr};
 
         try {

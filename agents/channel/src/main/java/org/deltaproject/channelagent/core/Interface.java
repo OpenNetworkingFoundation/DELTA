@@ -113,9 +113,11 @@ public class Interface extends Thread {
             BufferedReader stderr = new BufferedReader(new InputStreamReader(processCbench.getInputStream()));
 
             String line;
+            System.out.println("hi");
             while ((line = stderr.readLine()) != null) {
-                log.info(line);
+                System.out.println(line);
             }
+            System.out.println("end");
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

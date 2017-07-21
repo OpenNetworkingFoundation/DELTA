@@ -3,7 +3,7 @@
 # Script to distribute the compiled files to VMs
 #
 
-scp $DELTA_ROOT/agents/apps/opendaylight/opendaylight-helium-sr3/target/delta-agent-app-odl-helium-sr3-1.0-SNAPSHOT.jar $DELTA_APP:~/
-scp $DELTA_ROOT/agents/apps/opendaylight/opendaylight-helium-sr3-sub/target/delta-agent-app-odl-helium-sr3-sub-1.0-SNAPSHOT.jar $DELTA_APP:~/
+scp $DELTA_ROOT/agents/apps/opendaylight/opendaylight-helium/target/delta-agent-app-odl-helium-1.0-SNAPSHOT.jar $DELTA_APP:~/
+scp $DELTA_ROOT/agents/apps/opendaylight/opendaylight-helium-sub/target/delta-agent-app-odl-helium-sub-1.0-SNAPSHOT.jar $DELTA_APP:~/
 scp $DELTA_ROOT/tools/dev/app-agent-setup/opendaylight/odl-helium-sr3-bash-profile $DELTA_APP:~/
 scp $DELTA_ROOT/tools/dev/app-agent-setup/opendaylight/odl-helium-sr3-setup $DELTA_APP:~/

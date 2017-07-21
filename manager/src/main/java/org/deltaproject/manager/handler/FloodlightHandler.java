@@ -19,8 +19,7 @@ public class FloodlightHandler implements ControllerHandler {
     private int currentPID = -1;
 
     private BufferedWriter stdIn;
-    private String stdOut;
-
+    private BufferedReader stdOut;
     private Thread loggerThd;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -38,14 +37,13 @@ public class FloodlightHandler implements ControllerHandler {
         String[] cmdArray = null;
 
         try {
-            if (version.equals("1.2")) {
-                cmdArray = new String[]{"ssh", sshAddr, "sudo", "java", "-jar", "floodlight-1.2.jar", "-cf", "./floodlightdefault.properties"};
-            } else if (version.equals("0.91")) {
-                cmdArray = new String[]{"ssh", sshAddr, "sudo", "java", "-jar", "floodlight-0.91.jar"};
-            } else {
+            if(!version.equals("1.2") && !version.equals("0.91")) {
                 log.error("Unavailable Floodlight version.. Exit..");
                 return false;
             }
+
+            cmdArray = new String[]{System.getenv("DELTA_ROOT") +
+                    "/tools/dev/app-agent-setup/floodlight/delta-run-floodlight", version};
 
             ProcessBuilder pb = new ProcessBuilder(cmdArray);
             pb.redirectErrorStream(true);
@@ -67,15 +65,21 @@ public class FloodlightHandler implements ControllerHandler {
             }
 
             stdIn = new BufferedWriter(new OutputStreamWriter(proc.getOutputStream()));
+//            stdOut = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 
+            String line = null;
             do {
-                stdOut = AgentLogger.readLogFile(AgentLogger.APP_AGENT);
+//                line = stdOut.readLine();
+                line = AgentLogger.getTemp();
+                Thread.sleep(500);
             }
-            while (!stdOut.contains("Starting DebugServer on :6655"));
+            while (!line.contains("Starting DebugServer on :6655"));
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        AgentLogger.setTemp("");
 
         return true;
     }
