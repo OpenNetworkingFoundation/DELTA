@@ -439,13 +439,13 @@ public class AppAgent {
 
 
     public boolean setControlMessageDrop() {
-        System.out.println("[ATTACK] Control_Message_Drop");
+        System.out.println("[ATTACK] Set Control Message Drop");
         isDrop = true;
         return true;
     }
 
     public String testControlMessageDrop() {
-        // System.out.println("[ATTACK] Control_Message_Drop");
+        System.out.println("[ATTACK] Start Control Message Drop");
         String drop = "";
 
         while (processor.getDropped() == null) {
@@ -492,7 +492,7 @@ public class AppAgent {
     }
 
     public String testInternalStorageAbuse() {
-        System.out.println("[ATTACK] Internal_Storage_Abuse");
+        System.out.println("[ATTACK] Internal Storage Abuse");
 
         String removed = "nothing";
 
@@ -519,7 +519,7 @@ public class AppAgent {
     }
 
     public String testFlowRuleModification() {
-        System.out.println("[ATTACK] Flow_Rule_Modification");
+        System.out.println("[ATTACK] Flow Rule Modification");
         Iterable<Device> dv = deviceService.getDevices();
         Iterator it = dv.iterator();
 
@@ -545,7 +545,7 @@ public class AppAgent {
 
                 result = "success|" + old.toString() + "\n ---> "
                         + newf.toString();
-                System.out.println("\n[ATTACK] " + result + "\n\n");
+                System.out.println("\n[ATTACK] " + result + "\n");
             }
         }
 
@@ -553,7 +553,7 @@ public class AppAgent {
     }
 
     public String testFlowTableClearance(boolean isLoop) {
-        System.out.println("[ATTACK] Flow_Table_Clearance");
+        System.out.println("[ATTACK] Flow TableClearance");
 
         String flows = "nothing";
 
@@ -616,7 +616,7 @@ public class AppAgent {
     }
 
     public String testApplicationEviction(String appname) {
-        System.out.println("[ATTACK] Application_Eviction");
+        System.out.println("[ATTACK] Application Eviction");
         boolean isRemoved = false;
         String result = "";
 
@@ -668,7 +668,7 @@ public class AppAgent {
     }
 
     public boolean testResourceExhaustionCPU() {
-        System.out.println("[ATTACK] Resource Exhausion : CPU");
+        System.out.println("[ATTACK] Resource Exhaustion : CPU");
 
         for (int count = 0; count < 100; count++) {
             CPU cpu_thread = new CPU();
@@ -679,21 +679,21 @@ public class AppAgent {
     }
 
     public boolean testSystemVariableManipulation() {
-        System.out.println("[ATTACK] System_Variable_Manipulation");
+        System.out.println("[ATTACK] System Variable Manipulation");
         this.systime = new SystemTimeSet();
         systime.start();
         return true;
     }
 
     public boolean testSystemCommandExecution() {
-        System.out.println("[ATTACK] System_Command_Execution");
+        System.out.println("[ATTACK] System Command Execution");
         System.exit(0);
 
         return true;
     }
 
     public boolean testFlowRuleFlooding() {
-        System.out.println("[ATTACK] Flow_Rule_Flooding");
+        System.out.println("[ATTACK] Flow Rule Flooding");
         TrafficTreatment.Builder treat = DefaultTrafficTreatment.builder();
         TrafficSelector.Builder selector = DefaultTrafficSelector.builder();
 
@@ -719,7 +719,7 @@ public class AppAgent {
     public String testSwitchFirmwareMisuse() {
         String result = "flows";
 
-        System.out.println("\n\n[ATTACK] Switch_Firmware_Misuse");
+        System.out.println("\n\n[ATTACK] Switch Firmware Misuse");
         TrafficSelector.Builder selector = DefaultTrafficSelector.builder();
 
         Iterable<Device> dv = deviceService.getDevices();

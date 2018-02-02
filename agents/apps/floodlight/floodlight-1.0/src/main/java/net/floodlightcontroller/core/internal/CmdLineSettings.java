@@ -28,6 +28,6 @@ public class CmdLineSettings {
     private String configFile = DEFAULT_CONFIG_FILE;
     
     public String getModuleFile() {
-    	return configFile;
+        return configFile;
     }
 }

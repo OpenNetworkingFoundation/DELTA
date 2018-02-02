@@ -189,7 +189,7 @@ public class TestControllerCase {
         log.info(info);
 
         initController();
-        chm.write("2.1.030");
+        chm.write("2.1.030|nohello");
 
         log.info("Dummy switch dosen't send hello message");
 
@@ -227,19 +227,7 @@ public class TestControllerCase {
 
         initController();
 
-        log.info("Dummy switch starts");
-        chm.write("startsw|nohello");
-
-        if (chm.read().contains("switchok")) {
-            try {
-                Thread.sleep(DEFAULT_TIMEOUT);
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-
-            chm.write(test.getcasenum());
-        }
+        chm.write(test.getcasenum());
 
         String response = chm.read();
 
@@ -300,7 +288,7 @@ public class TestControllerCase {
      * 2.1.060 - Un-flagged Flow Remove Message Notification
      * Check if the controller accepts a flow remove message notification without requesting the delete event.
      */
-    public void testUnFlaggedFlowRemoveMsgNotification(TestCase test) throws InterruptedException {
+    public void testUnFlaggedFlowRemoveMsgNotification(TestCase test) {
         String info = test.getcasenum() + " - Un-flagged Flow Remove Message Notification - Test for controller protection against unacknowledged manipulation of the network";
         log.info(info);
 
@@ -309,16 +297,21 @@ public class TestControllerCase {
         log.info("Dummy switch starts");
         chm.write("startsw");
 
-        if (!chm.read().contains("switchok"))
+        if (!chm.read().contains("switchok")) {
+            log.info("Dummy switch did not start");
             return;
+        }
 
-        Thread.sleep(5000);
-        am.write(test.getcasenum());
+        am.write(test.getcasenum() + "|install");
+        long flowId = Integer.parseInt(am.read().split("\\|")[1]);
         log.info("App-agent sends msg " + am.read() + " with un-flagged removed");
 
-        Thread.sleep(2000);
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         chm.write(test.getcasenum());
-
         String response = chm.read();
 
         if (response.equals("nothing")) {
@@ -327,6 +320,9 @@ public class TestControllerCase {
 
             return;
         }
+
+        am.write(test.getcasenum() + "|check|" + flowId);
+        log.info("App-agent sends msg " + am.read() + " with un-flagged removed");
 
         String[] split = StringUtils.split(response, "\n");
         log.info(split[0]);

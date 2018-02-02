@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.Socket;
 
 public class Interface extends Thread {
@@ -171,30 +172,25 @@ public class Interface extends Thread {
         testSwitch = new TestSwitchCase(controllerIP, ofVersion, ofPort);
     }
 
-    public void connectManager() {
-        try {
-            socket = new Socket(amIP, amPort);
-            // socket.setReuseAddress(true);
+    public void connectManager() throws Exception {
+        socket = new Socket(amIP, amPort);
+//        socket.setReuseAddress(true);
 
-            in = socket.getInputStream();
-            dis = new DataInputStream(in);
+        in = socket.getInputStream();
+        dis = new DataInputStream(in);
 
-            out = socket.getOutputStream();
-            dos = new DataOutputStream(out);
+        out = socket.getOutputStream();
+        dos = new DataOutputStream(out);
 
-            dos.writeUTF("ChannelAgent");
-            dos.flush();
+        dos.writeUTF("ChannelAgent");
+        dos.flush();
 
-            String ack = dis.readUTF();
-            if (ack.contains("OK")) {
-                log.info("[Channel Agent] Connected with Agent-Manager");
-            } else {
-                log.info("[Channel Agent] Connection failed");
-                System.exit(1);
-            }
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        String ack = dis.readUTF();
+        if (ack.contains("OK")) {
+            log.info("[Channel Agent] Connected with Agent-Manager");
+        } else {
+            log.info("[Channel Agent] Connection failed");
+            System.exit(1);
         }
     }
 
@@ -203,162 +199,165 @@ public class Interface extends Thread {
         // TODO Auto-generated method stub
         String recv = "";
 
-        try {
-            while (true) {
-                // reads characters encoded with modified UTF-8
-                recv = dis.readUTF();
+        while (true) {
+            try {
+                this.connectManager();
+                while (true) {
+                    // reads characters encoded with modified UTF-8
+                    recv = dis.readUTF();
 
-                if (recv.startsWith("config")) {
-                    this.setConfiguration(recv);
-                    continue;
-                }
+                    if (recv.startsWith("config")) {
+                        this.setConfiguration(recv);
+                        continue;
+                    }
 
                 /*
                  *  DATA_PLANE_OF test cases
                  */
-                if (recv.contains("runDummyController")) {
-                    testSwitch.runDummyController(DummyController.HANDSHAKE_DEFAULT);
-                    dos.writeUTF("runDummyController");
-                } else if (recv.equalsIgnoreCase("1.1.010")) {
-                    String res = testSwitch.testPortRangeViolation(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.020")) {
-                    String res = testSwitch.testTableID(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.030")) {
-                    String res = testSwitch.testGroupID(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.040")) {
-                    String res = testSwitch.testMeterID(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.050")) {
-                    String res = testSwitch.testTableLoop(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.060")) {
-                    String res = testSwitch.testCorruptedControlMsgType(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.070")) {
-                    String res = testSwitch.testUnsupportedVersionNumber(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.080")) {
-                    String res = testSwitch.testMalformedVersionNumber(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.090")) {
-                    String res = testSwitch.testInvalidOXMType(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.100")) {
-                    String res = testSwitch.testInvalidOXMLength(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.110")) {
-                    String res = testSwitch.testInvalidOXMValue(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.120")) {
-                    String res = testSwitch.testDisabledTableFeatureRequest(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.130")) {
-                    String res = testSwitch.testHandshakeWithoutHello(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.140")) {
-                    String res = testSwitch.testControlMsgBeforeHello(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.150")) {
-                    String res = testSwitch.testIncompatibleHelloAfterConnection(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.160")) {
-                    String res = testSwitch.testCorruptedCookieValue(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("1.1.170")) {
-                    String res = testSwitch.testMalformedBufferIDValue(recv);
-                    dos.writeUTF(res);
-                }
+                    if (recv.contains("runDummyController")) {
+                        testSwitch.runDummyController(DummyController.HANDSHAKE_DEFAULT);
+                        dos.writeUTF("runDummyController");
+                    } else if (recv.equalsIgnoreCase("1.1.010")) {
+                        String res = testSwitch.testPortRangeViolation(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.020")) {
+                        String res = testSwitch.testTableID(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.030")) {
+                        String res = testSwitch.testGroupID(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.040")) {
+                        String res = testSwitch.testMeterID(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.050")) {
+                        String res = testSwitch.testTableLoop(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.060")) {
+                        String res = testSwitch.testCorruptedControlMsgType(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.070")) {
+                        String res = testSwitch.testUnsupportedVersionNumber(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.080")) {
+                        String res = testSwitch.testMalformedVersionNumber(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.090")) {
+                        String res = testSwitch.testInvalidOXMType(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.100")) {
+                        String res = testSwitch.testInvalidOXMLength(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.110")) {
+                        String res = testSwitch.testInvalidOXMValue(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.120")) {
+                        String res = testSwitch.testDisabledTableFeatureRequest(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.130")) {
+                        String res = testSwitch.testHandshakeWithoutHello(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.140")) {
+                        String res = testSwitch.testControlMsgBeforeHello(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.150")) {
+                        String res = testSwitch.testIncompatibleHelloAfterConnection(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.160")) {
+                        String res = testSwitch.testCorruptedCookieValue(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("1.1.170")) {
+                        String res = testSwitch.testMalformedBufferIDValue(recv);
+                        dos.writeUTF(res);
+                    }
 
                 /*
                  *  CONTROL_PLANE_OF test cases
                  */
-                if (recv.contains("startsw")) {
-                    if (recv.contains("nohello")) {
-                        testController.startSW(DummySwitch.HANDSHAKE_NO_HELLO);
-                    } else {
-                        testController.startSW(DummySwitch.HANDSHAKE_DEFAULT);
-                    }
-                    dos.writeUTF("switchok");
-                } else if (recv.equalsIgnoreCase("2.1.010")) {
-                    String res = testController.testMalformedVersionNumber(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("2.1.020")) {
-                    String res = testController.testCorruptedControlMsgType(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("2.1.030")) {
-                    String res = testController.testHandShakeWithoutHello(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("2.1.040")) {
-                    String res = testController.testControlMsgBeforeHello(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("2.1.050")) {
-                    String res = testController.testMultipleMainConnectionReq(recv);
-                    dos.writeUTF(res);
-                } else if (recv.equalsIgnoreCase("2.1.060")) {
-                    String res = testController.testUnFlaggedFlowRemoveMsgNotification(recv);
-                    dos.writeUTF(res);
-                } else if (recv.contains("2.1.070")) {
-                    if (recv.contains("exit")) {
-                        testController.exitTopo();
-                        continue;
-                    } else {
-                        String res = testController.testTLSSupport(recv);
+                    if (recv.contains("startsw")) {
+                        if (recv.contains("nohello")) {
+                            testController.startSW(DummySwitch.HANDSHAKE_NO_HELLO);
+                        } else if (recv.contains("nohandshake")) {
+                            testController.startSW(DummySwitch.NO_HANDSHAKE);
+                        } else {
+                            testController.startSW(DummySwitch.HANDSHAKE_DEFAULT);
+                        }
+                        dos.writeUTF("switchok");
+                    } else if (recv.equalsIgnoreCase("2.1.010")) {
+                        String res = testController.testMalformedVersionNumber(recv);
                         dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("2.1.020")) {
+                        String res = testController.testCorruptedControlMsgType(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("2.1.030")) {
+                        String res = testController.testHandShakeWithoutHello(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("2.1.040")) {
+                        String res = testController.testControlMsgBeforeHello(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("2.1.050")) {
+                        String res = testController.testMultipleMainConnectionReq(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.equalsIgnoreCase("2.1.060")) {
+                        pktListener.startListening();
+                        String res = testController.testUnFlaggedFlowRemoveMsgNotification(recv);
+                        dos.writeUTF(res);
+                    } else if (recv.contains("2.1.070")) {
+                        if (recv.contains("exit")) {
+                            testController.exitTopo();
+                            continue;
+                        } else {
+                            String res = testController.testTLSSupport(recv);
+                            dos.writeUTF(res);
+                        }
                     }
-                }
 
                 /*
                  *  ADVANCED test cases
                  */
-                if (recv.equalsIgnoreCase("3.1.010")) {
-                    log.info("[Channel Agent] Pacekt-In Flooding test starts");
-                    this.executeCbench();
-                    dos.writeUTF("success");
-                } else if (recv.equalsIgnoreCase("3.1.160")) {
-                    log.info("[Channel Agent] LinkFabrication test starts");
-                    pktListener.setTypeOfAttacks(TestCase.LINKFABRICATION);
-                    pktListener.startListening();
-                    pktListener.startARPSpoofing();
+                    if (recv.equalsIgnoreCase("3.1.010")) {
+                        log.info("[Channel Agent] Pacekt-In Flooding test starts");
+                        this.executeCbench();
+                        dos.writeUTF("success");
+                    } else if (recv.equalsIgnoreCase("3.1.160")) {
+                        log.info("[Channel Agent] LinkFabrication test starts");
+                        pktListener.setTypeOfAttacks(TestCase.LINKFABRICATION);
+                        pktListener.startListening();
+                        pktListener.startARPSpoofing();
 
-                    Thread.sleep(40000);
+                        Thread.sleep(40000);
 
-                    dos.writeUTF("success");
-                } else if (recv.equalsIgnoreCase("3.1.170")) {
-                    log.info("[Channel Agent] Evaesdrop test starts");
-                    pktListener.setTypeOfAttacks(TestCase.EVAESDROP);
-                    pktListener.startListening();
-                    pktListener.startARPSpoofing();
-                } else if (recv.equalsIgnoreCase("3.1.170-2")) {
-                    String result = pktListener.getTopoInfo();
+                        dos.writeUTF("success");
+                    } else if (recv.equalsIgnoreCase("3.1.170")) {
+                        log.info("[Channel Agent] Evaesdrop test starts");
+                        pktListener.setTypeOfAttacks(TestCase.EVAESDROP);
+                        pktListener.startListening();
+                        pktListener.startARPSpoofing();
+                    } else if (recv.equalsIgnoreCase("3.1.170-2")) {
+                        String result = pktListener.getTopoInfo();
 
-                    if (result != null && !result.isEmpty() && result.length() > 0)
-                        result = "success|\n:: Result for Building Topology ::\n" + result;
-                    else
-                        result = "fail";
+                        if (result != null && !result.isEmpty() && result.length() > 0)
+                            result = "success|\n:: Result for Building Topology ::\n" + result;
+                        else
+                            result = "fail";
 
-                    log.info("[Channel Agent] Topology Information " + result);
-                    dos.writeUTF(result);
-                } else if (recv.equalsIgnoreCase("3.1.180")) {
-                    log.info("[Channel Agent] MITM test starts");
-                    pktListener.setTypeOfAttacks(TestCase.MITM);
-                    pktListener.startListening();
-                    pktListener.startARPSpoofing();
-                    dos.writeUTF("success");
-                } else if (recv.equalsIgnoreCase("3.1.050")) { // Switch Table
-                    // Flooding
+                        log.info("[Channel Agent] Topology Information " + result);
+                        dos.writeUTF(result);
+                    } else if (recv.equalsIgnoreCase("3.1.180")) {
+                        log.info("[Channel Agent] MITM test starts");
+                        pktListener.setTypeOfAttacks(TestCase.MITM);
+                        pktListener.startListening();
+                        pktListener.startARPSpoofing();
+                        dos.writeUTF("success");
+                    } else if (recv.equalsIgnoreCase("3.1.050")) { // Switch Table
+                        // Flooding
+                        testController.testSwitchTableFlooding();
+                        dos.writeUTF("success");
+                    } else if (recv.equalsIgnoreCase("3.1.060")) {
+                        log.info("[Channel Agent] Switch Identification Spoofing Test");
+                        pktListener.testSwitchIdentification();
 
-                    Thread.sleep(15000);
-
-                    dos.writeUTF("success");
-                } else if (recv.equalsIgnoreCase("3.1.060")) {
-                    log.info("[Channel Agent] Switch Identification Spoofing Test");
-                    pktListener.testSwitchIdentification();
-
-                    dos.writeUTF("success");
-                }
+                        dos.writeUTF("success");
+                    }
 
                 /* for fuzzing later
                 else if (recv.startsWith("fuzzing")) {
@@ -409,43 +408,44 @@ public class Interface extends Thread {
                 } else
                 */
 
-                if (recv.contains("close")) {
-                    log.info("[Channel Agent] Closing...");
-                    dis.close();
-                    dos.close();
-                    System.exit(0);
-                }
+                    if (recv.contains("close")) {
+                        log.info("[Channel Agent] Closing...");
+                        dis.close();
+                        dos.close();
+                        System.exit(0);
+                    }
 
-                dos.flush();
+                    dos.flush();
+                }
+            } catch (ConnectException e) {
+                log.error("[Channel-Agent] Agent Manager is not listening");
+            } catch (Exception e) {
+                // if any error occurs
+                log.error(String.valueOf(e));
+            } finally {
+
+                try {
+                    if (dis != null) {
+                        dis.close();
+                    }
+
+                    if (dos != null) {
+                        dos.close();
+                    }
+
+                    if (socket != null) {
+                        socket.close();
+                    }
+                } catch (IOException e) {
+                    log.error(e.toString());
+                }
             }
-        } catch (Exception e) {
-            // if any error occurs
-            e.printStackTrace();
 
-            if (dis != null)
-                try {
-                    dis.close();
-                } catch (IOException e1) {
-                    // TODO Auto-generated catch block
-                    // e.printStackTrace();
-                }
-
-            if (dos != null)
-                try {
-                    dos.close();
-                } catch (IOException e1) {
-                    // TODO Auto-generated catch block
-                    // e.printStackTrace();
-                }
-
-            if (socket != null)
-                try {
-                    socket.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
-
-        log.info("Thread exit");
     }
 }

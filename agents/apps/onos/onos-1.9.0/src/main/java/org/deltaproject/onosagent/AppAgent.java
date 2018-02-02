@@ -1,5 +1,6 @@
 package org.deltaproject.onosagent;
 
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
@@ -171,8 +172,6 @@ public class AppAgent {
         log.info("Started with Application ID {}", appId.id());
 
         cm = new AMInterface(this);
-        cm.setServerAddr();
-        cm.connectServer("AppAgent");
         cm.start();
     }
 
@@ -213,35 +212,59 @@ public class AppAgent {
     }
 
 
-    public String sendUnFlaggedFlowRemoveMsg() {
-        TrafficTreatment.Builder treat = DefaultTrafficTreatment.builder();
-        treat.drop();
+    // 2.1.060
+    public String sendUnFlaggedFlowRemoveMsg(String cmd, long ruleId) {
 
-        TrafficSelector.Builder selector = DefaultTrafficSelector.builder();
-        selector.matchInPort(PortNumber.portNumber(1));
-        selector.matchEthType((short) 0x0800);
+        if (cmd.contains("install")) {
+            TrafficTreatment.Builder treat = DefaultTrafficTreatment.builder();
+            treat.drop();
 
-        Iterable<Device> dv = deviceService.getDevices();
-        Iterator it = dv.iterator();
+            TrafficSelector.Builder selector = DefaultTrafficSelector.builder();
+            selector.matchInPort(PortNumber.portNumber(1));
+            selector.matchEthType((short) 0x0800);
 
-        while (it.hasNext()) {
-            Device piece = (Device) it.next();
-//            FlowRule newf = new DefaultFlowRule(piece.id(),
-//                    selector.build(), treat.build(), 555,       // priority: 555
-//                    appId, flowTimeout, false, null);
-//
-//            flowRuleService.applyFlowRules(newf);
+            Iterable<Device> dvs = null;
+            do {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                dvs = deviceService.getDevices();
 
-            ForwardingObjective fwd = DefaultForwardingObjective.builder()
-                    .withFlag(ForwardingObjective.Flag.SPECIFIC)
-                    .withPriority(555).makePermanent()
-                    .withSelector(selector.build()).fromApp(appId)
-                    .withTreatment(treat.build()).add();
+            } while (!dvs.iterator().hasNext());
 
-            flowObjectiveService.forward(piece.id(), fwd);
+            while (dvs.iterator().hasNext()) {
+                Device d = dvs.iterator().next();
+                FlowRule newf = new DefaultFlowRule(d.id(),
+                        selector.build(), treat.build(), 555,       // priority: 555
+                        appId, flowTimeout, true, null);
 
-            return fwd.toString();
+                flowRuleService.applyFlowRules(newf);
+
+                log.info("Install a flow rule : {} to {}", newf, d);
+
+                String result = "Installed flow rule id|" + newf.id().value();
+                return result;
+            }
+        } else if (cmd.contains("check")) {
+            Iterable<FlowRule> flowRulesById = flowRuleService.getFlowRulesById(appId);
+
+            Boolean result = true;
+
+            for (FlowRule rule : flowRulesById) {
+                if (rule.id().value() == ruleId) {
+                    result = false;
+                }
+            }
+
+            if (result) {
+                return "success";
+            } else {
+                return "fail";
+            }
         }
+
         return "fail";
     }
 

@@ -91,7 +91,7 @@ public class ResultAnalyzer {
                     if (result.getAfterL() != null)
                         temp2 = checkCommunication(result.getAfterL());
 
-                    isSuccess = temp1 | temp2;
+                    isSuccess = temp2;
                     break;
 
                 case ResultInfo.APPAGENT_REPLY:

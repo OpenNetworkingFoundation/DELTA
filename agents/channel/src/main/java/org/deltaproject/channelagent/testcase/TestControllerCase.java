@@ -7,6 +7,7 @@ import org.deltaproject.channelagent.dummy.DummyOF13;
 import org.deltaproject.channelagent.dummy.DummySwitch;
 import org.projectfloodlight.openflow.exceptions.OFParseError;
 import org.projectfloodlight.openflow.protocol.*;
+import org.projectfloodlight.openflow.types.DatapathId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,13 +49,7 @@ public class TestControllerCase {
         ofSwitch.setTestHandShakeType(type);
         ofSwitch.setOFFactory(targetOFVersion);
         ofSwitch.connectTargetController(targetIP, targetPORT);
-
-        try {
-            ofSwitch.sendHello(0);
-        } catch (OFParseError ofParseError) {
-            ofParseError.printStackTrace();
-        }
-
+        ofSwitch.sendHello(0);
         ofSwitch.start();
 
         if (type == DummySwitch.HANDSHAKE_DEFAULT) {
@@ -72,8 +67,10 @@ public class TestControllerCase {
     }
 
     public void stopSW() {
-        if (ofSwitch != null)
+        if (ofSwitch != null) {
             ofSwitch.interrupt();
+            ofSwitch = null;
+        }
 
         log.info("[Channel Agent] Stop Dummny Switch");
     }
@@ -85,6 +82,7 @@ public class TestControllerCase {
         log.info("[Channel Agent] Stop Sub Switch");
     }
 
+    // 2.1.010
     public String testMalformedVersionNumber(String code) {
         log.info("[Channel Agent] " + code + " - Malformed Version Number test");
 
@@ -100,8 +98,10 @@ public class TestControllerCase {
 
         byte[] msg;
         if (targetOFVersion == 4) {
-            msg = Utils.hexStringToByteArray(DummyOF13.PACKET_IN);
+            msg = Utils.hexStringToByteArray(DummyOF13.PORT_STATUS);
+//            msg = Utils.hexStringToByteArray(DummyOF13.PACKET_IN);
             msg[0] = (byte) 0x01;
+
             result = "Send Packet-In msg with OF version 1.0\n";
         } else {
             msg = Utils.hexStringToByteArray(DummyOF10.PACKET_IN);
@@ -129,10 +129,11 @@ public class TestControllerCase {
         } else
             result += "Response is NULL (expected msg is ERR), FAIL";
 
-        stopSW();
+//        stopSW();
         return result;
     }
 
+    // 2.1.020
     public String testCorruptedControlMsgType(String code) {
         log.info("[Channel Agent] " + code + " - Corrupted Control Message Type test");
 
@@ -178,8 +179,10 @@ public class TestControllerCase {
         return result;
     }
 
+    // 2.1.030
     public String testHandShakeWithoutHello(String code) {
         log.info("[Channel Agent] " + code + " - Handshake without Hello Message test");
+
         startSW(DummySwitch.HANDSHAKE_NO_HELLO);
 
         try {
@@ -194,12 +197,15 @@ public class TestControllerCase {
             return "switchNotConnected";
     }
 
-    public String testControlMsgBeforeHello(String code) {
+    // 2.1.040
+    public String testControlMsgBeforeHello(String code) throws Exception {
         log.info("[Channel Agent] " + code + " - Control Message before Hello Message (Main Connection) test");
 
         String result = "Send a packet-in message before handshake";
         log.info("[Channel Agent] " + result);
         result = result + '\n';
+
+        startSW(DummySwitch.NO_HANDSHAKE);
 
         byte[] msg;
         if (targetOFVersion == 4) {
@@ -226,10 +232,11 @@ public class TestControllerCase {
         } else
             result += "Response is ignored, PASS";
 
-        stopSW();
+//        stopSW();
         return result;
     }
 
+    //2.1.050
     public String testMultipleMainConnectionReq(String code) {
         log.info("[Channel Agent] " + code + " - Multiple Main Connection Request test");
 
@@ -246,20 +253,17 @@ public class TestControllerCase {
         temp.setTestHandShakeType(DummySwitch.HANDSHAKE_DEFAULT);
         temp.setOFFactory(targetOFVersion);
         temp.connectTargetController(targetIP, targetPORT);
-        try {
-            temp.sendHello(0);
-        } catch (OFParseError ofParseError) {
-            ofParseError.printStackTrace();
-        }
+        temp.sendHello(0);
         temp.start();
 
         return "Start another dummy switch";
     }
 
+    //2.1.060
     public String testUnFlaggedFlowRemoveMsgNotification(String code) throws InterruptedException {
         log.info("[Channel Agent] " + code + " - no-flagged Flow Remove Message notification test");
 
-        String result = "Send a un-flagged flow remove msg";
+        String result = "Send an un-flagged flow remove msg";
         log.info("[Channel Agent] " + result);
         result = result + '\n';
 
@@ -277,8 +281,11 @@ public class TestControllerCase {
 
         OFFlowRemoved.Builder fm = ofSwitch.getFactory().buildFlowRemoved();
         fm.setMatch(fa.getMatch());
-        fm.setXid(this.requestXid);
-        fm.setReason((short) 1);
+        fm.setXid(fa.getXid());
+        fm.setReason(OFFlowRemovedReason.HARD_TIMEOUT);
+        fm.setCookie(fa.getCookie());
+        fm.setTableId(fa.getTableId());
+        fm.setPriority(fa.getPriority());
 
         OFFlowRemoved msg = fm.build();
         ofSwitch.sendMsg(msg, -1);
@@ -292,8 +299,9 @@ public class TestControllerCase {
         return result;
     }
 
+    //2.1.070
     public String testTLSSupport(String code) {
-        log.info("Test TLS Support");
+        log.info("[Channel Agent] " + code + " - Test TLS Support");
         try {
             proc = Runtime.getRuntime().exec("python $HOME/test-controller-topo.py " + targetIP + " " + targetPORT);
             Field pidField = Class.forName("java.lang.UNIXProcess").getDeclaredField("pid");
@@ -315,6 +323,28 @@ public class TestControllerCase {
             Runtime.getRuntime().exec("sudo kill -9 " + this.pid);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    //3.1.050
+    public void testSwitchTableFlooding() {
+
+        for (int i=1; i < Integer.MAX_VALUE ; i++) {
+            DummySwitch dummySwitch = new DummySwitch(DatapathId.of(i));
+            dummySwitch.setTestHandShakeType(DummySwitch.HANDSHAKE_DEFAULT);
+            dummySwitch.setOFFactory(targetOFVersion);
+            dummySwitch.connectTargetController(targetIP, targetPORT);
+            dummySwitch.sendHello(requestXid);
+            dummySwitch.start();
+
+            while (!dummySwitch.getHandshaked()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    log.error(e.toString());
+                }
+            }
+            dummySwitch.interrupt();
         }
     }
 }

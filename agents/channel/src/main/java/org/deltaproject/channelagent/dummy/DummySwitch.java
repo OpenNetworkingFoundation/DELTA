@@ -1,36 +1,75 @@
 package org.deltaproject.channelagent.dummy;
 
+import com.google.common.primitives.Longs;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
+import org.deltaproject.channelagent.fuzzing.SeedPackets;
+import org.deltaproject.channelagent.utils.Utils;
+import org.projectfloodlight.openflow.exceptions.OFParseError;
+import org.projectfloodlight.openflow.protocol.OFBarrierReply;
+import org.projectfloodlight.openflow.protocol.OFCapabilities;
+import org.projectfloodlight.openflow.protocol.OFControllerRole;
+import org.projectfloodlight.openflow.protocol.OFEchoReply;
+import org.projectfloodlight.openflow.protocol.OFFactories;
+import org.projectfloodlight.openflow.protocol.OFFactory;
+import org.projectfloodlight.openflow.protocol.OFFeaturesReply;
+import org.projectfloodlight.openflow.protocol.OFFlowAdd;
+import org.projectfloodlight.openflow.protocol.OFFlowMod;
+import org.projectfloodlight.openflow.protocol.OFFlowModCommand;
+import org.projectfloodlight.openflow.protocol.OFFlowRemoved;
+import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
+import org.projectfloodlight.openflow.protocol.OFFlowStatsReply;
+import org.projectfloodlight.openflow.protocol.OFHello;
+import org.projectfloodlight.openflow.protocol.OFInstructionType;
+import org.projectfloodlight.openflow.protocol.OFMessage;
+import org.projectfloodlight.openflow.protocol.OFMessageReader;
+import org.projectfloodlight.openflow.protocol.OFMeterFeaturesStatsReply;
+import org.projectfloodlight.openflow.protocol.OFPortStatus;
+import org.projectfloodlight.openflow.protocol.OFRoleReply;
+import org.projectfloodlight.openflow.protocol.OFStatsReply;
+import org.projectfloodlight.openflow.protocol.OFStatsRequest;
+import org.projectfloodlight.openflow.protocol.OFTableConfig;
+import org.projectfloodlight.openflow.protocol.OFTableFeatureProp;
+import org.projectfloodlight.openflow.protocol.OFTableFeaturePropApplyActions;
+import org.projectfloodlight.openflow.protocol.OFTableFeaturePropInstructions;
+import org.projectfloodlight.openflow.protocol.OFTableFeatures;
+import org.projectfloodlight.openflow.protocol.OFTableFeaturesStatsReply;
+import org.projectfloodlight.openflow.protocol.OFType;
+import org.projectfloodlight.openflow.protocol.OFVersion;
+import org.projectfloodlight.openflow.protocol.actionid.OFActionId;
+import org.projectfloodlight.openflow.protocol.errormsg.OFErrorMsgs;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
+import org.projectfloodlight.openflow.protocol.instructionid.OFInstructionId;
+import org.projectfloodlight.openflow.protocol.instructionid.OFInstructionIdApplyActions;
+import org.projectfloodlight.openflow.types.DatapathId;
+import org.projectfloodlight.openflow.types.OFAuxId;
+import org.projectfloodlight.openflow.types.TableId;
+import org.projectfloodlight.openflow.types.U16;
+import org.projectfloodlight.openflow.types.U64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.crypto.Data;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-
-import org.deltaproject.channelagent.utils.Utils;
-import org.deltaproject.channelagent.fuzzing.SeedPackets;
-import org.projectfloodlight.openflow.exceptions.OFParseError;
-import org.projectfloodlight.openflow.protocol.*;
-import org.projectfloodlight.openflow.protocol.errormsg.OFErrorMsgs;
-import org.projectfloodlight.openflow.types.DatapathId;
-import org.projectfloodlight.openflow.types.OFAuxId;
-import org.projectfloodlight.openflow.types.U16;
-
-import com.google.common.primitives.Longs;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.Unpooled;
-import org.projectfloodlight.openflow.types.U64;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DummySwitch extends Thread {
     private static final Logger log = LoggerFactory.getLogger(DummySwitch.class);
 
     public static final int HANDSHAKE_DEFAULT = 0;
     public static final int HANDSHAKE_NO_HELLO = 1;
-
+    public static final int NO_HANDSHAKE = 2;
     public static final int MINIMUM_LENGTH = 8;
 
     private Socket socket;
@@ -43,23 +82,29 @@ public class DummySwitch extends Thread {
 
     /* for OF message */
     private OFFactory factory;
-
     private OFMessageReader<OFMessage> reader;
-
     private SeedPackets seedpkts;
-
     private OFMessage res;
-
     private int testHandShakeType;
 
-    private long requestXid = 0xeeeeeeeel;
+    private static final long DEFAULT_XID = 0xeeeeeeeel;
+    private static final DatapathId DEFAULT_DPID = DatapathId.of((long) 1);
+    private long requestXid;
     private boolean handshaked = false;
     private boolean synack = false;
+    private DatapathId dpid;
 
     private OFFlowAdd backupFlowAdd;
+    private ConcurrentHashMap<OFFlowStatsEntry, OFFlowStatsEntry> flowTable = new ConcurrentHashMap<>();
 
     public DummySwitch() {
-        res = null;
+        this.res = null;
+        this.dpid = DEFAULT_DPID;
+    }
+
+    public DummySwitch(DatapathId dpid) {
+        this.res = null;
+        this.dpid = dpid;
     }
 
     public void setTestHandShakeType(int type) {
@@ -239,32 +284,42 @@ public class DummySwitch extends Thread {
 
 
     /* OF HandShake */
-    public void sendHello(long xid) throws OFParseError {
-        if (testHandShakeType == DummySwitch.HANDSHAKE_NO_HELLO) {
-            // this.sendFeatureReply(requestXid);
-            return;
+    public void sendHello(long xid){
+
+        try {
+            if (testHandShakeType == DummySwitch.HANDSHAKE_NO_HELLO) {
+                this.sendFeatureReply(requestXid);
+                return;
+            } else if (testHandShakeType == DummySwitch.NO_HANDSHAKE) {
+                return;
+            }
+
+            if (factory.getVersion() == OFVersion.OF_13) {
+                byte[] msg = Utils.hexStringToByteArray(DummyOF13.HELLO);
+                sendRawMsg(msg);
+                return;
+            }
+
+            OFHello.Builder builder = factory.buildHello();
+            builder.setXid(0xb0);
+
+            sendMsg(builder.build(), -1);
+        } catch (OFParseError e) {
+            log.error(e.toString());
         }
-
-        if (factory.getVersion() == OFVersion.OF_13) {
-            byte[] msg = Utils.hexStringToByteArray(DummyOF13.HELLO);
-            sendRawMsg(msg);
-            return;
-        }
-
-        OFHello.Builder builder = factory.buildHello();
-        builder.setXid(0xb0);
-
-        sendMsg(builder.build(), -1);
     }
 
     public void sendFeatureReply(long xid) throws OFParseError {
         OFFeaturesReply.Builder frb = factory.buildFeaturesReply();
-        frb.setDatapathId(DatapathId.of((long) 1));
+        frb.setDatapathId(this.dpid);
         frb.setNBuffers((long) 256);
         frb.setNTables((short) 254);
         frb.setAuxiliaryId(OFAuxId.of((short) 0));
         frb.setReserved((long) 0);
         frb.setXid(xid);
+        HashSet<OFCapabilities> ofCapabilities = new HashSet<OFCapabilities>();
+        ofCapabilities.add(OFCapabilities.FLOW_STATS);
+        frb.setCapabilities(ofCapabilities);
 
         sendMsg(frb.build(), -1);
     }
@@ -286,6 +341,7 @@ public class DummySwitch extends Thread {
 
     public void sendStatReply(OFMessage input, long xid) {
         byte[] msg;
+        OFStatsReply replyMsg = null;
 
         if (factory.getVersion() == OFVersion.OF_13) {
             OFStatsRequest req = (OFStatsRequest) input;
@@ -303,8 +359,55 @@ public class DummySwitch extends Thread {
                     msg = Utils.hexStringToByteArray(DummyOF13.MULTIPART_PORT_STATS);
                     break;
                 case FLOW:
-                    msg = Utils.hexStringToByteArray(DummyOF13.MULTIPART_FLOW);
-                    break;
+                    synchronized (this) {
+                        replyMsg = factory.buildFlowStatsReply()
+                                .setXid(input.getXid())
+                                .setEntries(new ArrayList<>(flowTable.values()))
+                                .build();
+                        sendMsg(replyMsg, -1);
+                    }
+                    return;
+                case METER_FEATURES:
+                    replyMsg = factory
+                            .buildMeterFeaturesStatsReply()
+                            .setXid(input.getXid())
+                            .setFeatures(factory.buildMeterFeatures().build())
+                            .build();
+                    sendMsg(replyMsg, -1);
+                    return;
+                case TABLE_FEATURES:
+
+                    List<OFInstructionId> ofInstructionIds = Arrays.asList(
+                            factory.instructionIds().applyActions(), factory.instructionIds().clearActions()
+                    );
+                    OFTableFeatureProp ofTableFeaturePropInstructions = factory.buildTableFeaturePropInstructions()
+                            .setInstructionIds(ofInstructionIds)
+                            .build();
+
+                    List<OFActionId> ofActionsIds = Arrays.asList(
+                            factory.actionIds().setField(), factory.actionIds().setNwTtl()
+                    );
+                    OFTableFeatureProp ofTableFeaturePropApplyActionsMiss = factory.buildTableFeaturePropApplyActionsMiss()
+                            .setActionIds(ofActionsIds)
+                            .build();
+
+                    OFTableFeatures ofTableFeatures = factory.buildTableFeatures()
+                            .setMetadataMatch(U64.NO_MASK)
+                            .setMetadataWrite(U64.NO_MASK)
+                            .setMaxEntries(1000000)
+                            .setTableId(TableId.ZERO)
+                            .setProperties(Arrays.asList(ofTableFeaturePropInstructions, ofTableFeaturePropApplyActionsMiss))
+                            .build();
+
+                    replyMsg = factory
+                            .buildTableFeaturesStatsReply()
+                            .setXid(input.getXid())
+                            .setEntries(Arrays.asList(factory.buildTableFeatures().build()))
+                            .setEntries(Arrays.asList(ofTableFeatures))
+                            .build();
+                    sendMsg(replyMsg, -1);
+
+                    return;
                 /* case AGGREGATE:
                     break;
                 case TABLE:
@@ -320,11 +423,6 @@ public class DummySwitch extends Thread {
                 case GROUP_FEATURES:
                     break;
                 case METER_CONFIG:
-                    break;
-                case METER_FEATURES:
-                    break;
-                case TABLE_FEATURES:
-                    msg = Utils.hexStringToByteArray(DMDataOF13.MULTIPART_FLOW);
                     break;
                 case TABLE_DESC:
                     break;
@@ -345,7 +443,7 @@ public class DummySwitch extends Thread {
         sendRawMsg(msg);
     }
 
-    public void sendRoleRes(long xid) {
+    private void sendRoleRes(long xid) {
         OFRoleReply.Builder builder = factory.buildRoleReply();
         builder.setXid(xid);
         builder.setGenerationId(U64.of(0));
@@ -355,21 +453,21 @@ public class DummySwitch extends Thread {
         sendMsg(msg, -1);
     }
 
-    public void sendBarrierRes(long xid) {
+    private void sendBarrierRes(long xid) {
         OFBarrierReply.Builder builder = factory.buildBarrierReply();
         builder.setXid(xid);
         OFBarrierReply msg = builder.build();
         sendMsg(msg, 8);
     }
 
-    public void sendEchoReply(long xid) {
+    private void sendEchoReply(long xid) {
         OFEchoReply.Builder builder = factory.buildEchoReply();
         builder.setXid(xid);
         OFEchoReply msg = builder.build();
         sendMsg(msg, 8);
     }
 
-    public void sendExperimenter(long xid) {
+    private void sendExperimenter(long xid) {
         byte[] msg = DummyOF10.hexStringToByteArray(DummyOF10.experimenter);
         byte[] xidbytes = Longs.toByteArray(xid);
         System.arraycopy(xidbytes, 4, msg, 4, 4);
@@ -380,7 +478,7 @@ public class DummySwitch extends Thread {
         sendRawMsg(msg);
     }
 
-    public boolean parseOFMsg(byte[] recv, int len) throws OFParseError {
+    private boolean parseOFMsg(byte[] recv, int len) throws OFParseError {
         // for OpenFlow Message
         byte[] rawMsg = new byte[len];
         System.arraycopy(recv, 0, rawMsg, 0, len);
@@ -396,6 +494,12 @@ public class DummySwitch extends Thread {
 
             if (version >= 5) {
                 log.info("[Channel Agent] OF Version >= 1.4 not supported");
+                return false;
+            }
+
+            // version check
+            if (version != factory.getVersion().getWireVersion()) {
+                log.info("[Channel Agent] Received OF Version {} not matched with the dummy switch", version);
                 return false;
             }
 
@@ -434,15 +538,23 @@ public class DummySwitch extends Thread {
                     printError(message);
                 } else if (message.getType() == OFType.FLOW_MOD) {
                     OFFlowMod fm = (OFFlowMod) message;
+
+                    processFlowMod(fm);
+
                     if (fm.getCommand() == OFFlowModCommand.ADD) {
                         OFFlowAdd fa = (OFFlowAdd) fm;
                         if (fa.getPriority() == 555) {
                             backupFlowAdd = fa;
-                            log.info("[Channel Agent] catch unflagged msg");
+                            log.info("[Channel Agent] catch un-flagged msg {}", fa.toString());
                         }
                     }
                 } else if (message.getType() == OFType.ROLE_REQUEST) {
                     sendRoleRes(xid);
+                } else if (message.getType() == OFType.ECHO_REQUEST) {
+                    OFEchoReply ofEchoReply = factory.buildEchoReply()
+                            .setXid(xid)
+                            .build();
+                    sendMsg(ofEchoReply, -1);
                 }
 
                 if (xid == this.requestXid) {
@@ -460,6 +572,29 @@ public class DummySwitch extends Thread {
 
         bb.clear();
         return true;
+    }
+
+    //add flow stats entries
+    private synchronized void processFlowMod(OFFlowMod msg) {
+
+        ArrayList<OFInstruction> newInst = new ArrayList<>();
+        List<OFInstruction> instructions = msg.getInstructions();
+        for (OFInstruction inst : instructions) {
+            if (inst.getType() == OFInstructionType.APPLY_ACTIONS) {
+                newInst.add(inst);
+            }
+        }
+
+        OFFlowStatsEntry ofFlowStatsEntry = factory.buildFlowStatsEntry()
+                .setInstructions(newInst)
+                .setCookie(msg.getCookie())
+                .setFlags(msg.getFlags())
+                .setPriority(msg.getPriority())
+                .setTableId(msg.getTableId())
+                .setMatch(msg.getMatch())
+                .build();
+
+        flowTable.put(ofFlowStatsEntry, ofFlowStatsEntry);
     }
 
     @Override

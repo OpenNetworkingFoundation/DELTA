@@ -3,3 +3,6 @@
 .idea
 target/
 agents/temp/
+.AppleDouble
+.DS_Store
+._.DS_Store

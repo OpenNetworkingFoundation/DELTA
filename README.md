@@ -25,7 +25,8 @@ In order to build and run DELTA, the following are required:
   + [Floodlight](http://www.projectfloodlight.org/download/): 0.91, 1.2
   + [ONOS](https://wiki.onosproject.org/display/ONOS/Downloads): 1.1, 1.6, 1.9
   + [OpenDaylight](https://www.opendaylight.org/downloads): Helium-sr3, Carbon
-+ [Cbench](https://floodlight.atlassian.net/wiki/display/floodlightcontroller/Cbench) (for channel agent)
+  + [Ryu](https://github.com/osrg/ryu): 4.16 (now under developing)
++ [Cbench](http://kkpradeeban.blogspot.kr/2014/10/installing-cbench-on-ubuntu-1404-lts.html) (for channel agent)
 + [Mininet 2.1+](http://mininet.org/download/) (for host agent)
 + (in the case of All-In-One Single Machine) Three virtual machines based on Ubuntu 14.04 LTS 64 bit.
   + VM-1: Target controller + Application agent
@@ -188,6 +189,7 @@ Command>_
 ## Main Contributors
 + Seungsoo Lee (KAIST)
 + Jinwoo Kim (KAIST)
++ Seungwon Woo (KAIST)
 + Changhoon Yoon (KAIST)
 + Sandra Scott-Hayward (Queen's University Belfast)
 + Seungwon Shin (KAIST)
@@ -199,4 +201,4 @@ Command>_
 + ![collabo](images/delta_collabo.png)
 
 ## Questions?
-Send questions or feedback to: lss365@kaist.ac.kr or jinwoo.kim@kaist.ac.kr 
+Send questions or feedback to: lss365@kaist.ac.kr, jinwoo.kim@kaist.ac.kr or seungwonwoo@kaist.ac.kr

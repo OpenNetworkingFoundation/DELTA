@@ -350,7 +350,7 @@ public class TestAdvancedCase {
 
             if (version != this.ofversion) {
                 // segmented TCP pkt
-                // log.info("[Channel Agent] OFVersion Missing " + version + " : " + offset + "-" + totalLen);
+                 log.info("[Channel Agent] OFVersion Missing " + version + " : " + offset + "-" + totalLen);
                 return null;
             }
 

@@ -150,6 +150,15 @@ public class Interface extends Thread {
         } else if (recv.contains("restore")) {
             act.testApplicationEviction("restore");
             dos.writeUTF("OK");
+        }  else if (recv.contains("2.1.060")) {
+            String cmd = null;
+            if (recv.contains("install")) {
+                result = app.sendUnFlaggedFlowRemoveMsg("install", 0);
+            } else if (recv.contains("check")) {
+                long ruleId = Long.parseLong(recv.split("\\|")[2]);
+                result = app.sendUnFlaggedFlowRemoveMsg("check", ruleId);
+            }
+            dos.writeUTF(result);
         }
 
         /* else if (recv.contains("3.1.190")) {

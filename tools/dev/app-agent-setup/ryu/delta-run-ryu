@@ -1,0 +1,11 @@
+#!/bin/bash
+
+AppName="ryu.app.simple_switch_13"
+RyuAppName="ryu/app_agent_13.py"
+if [ "$1" = "1.0" ]; then
+ AppName="ryu.app.simple_switch"
+ RyuAppName="ryu/app_agent.py"
+fi
+
+scp -r $DELTA_ROOT/agents/apps/ryu $DELTA_APP:~/
+ssh $DELTA_APP "ryu-manager --observe-links $AppName ryu.app.rest_topology ryu.app.ofctl_rest ryu.app.ws_topology ryu.app.gui_topology.gui_topology $RyuAppName"

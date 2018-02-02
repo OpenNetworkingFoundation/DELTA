@@ -17,6 +17,7 @@ if [ -z "${JAVA_HOME}" ]; then
 fi
 
 export MAVEN=${MAVEN:-~/Applications/apache-maven-3.3.9}
+export MAVEN_OPTS="-Dfile.encoding=UTF-8 -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
 
 # Setup a path
 export DELTA_ROOT=~/DELTA

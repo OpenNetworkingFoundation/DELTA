@@ -8,16 +8,15 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.lang.reflect.Field;
 
-public class ONOSHandler implements ControllerHandler {
+public class RyuHandler implements ControllerHandler {
     private Process proc = null;
-    private static final Logger log = LoggerFactory.getLogger(ONOSHandler.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(RyuHandler.class.getName());
     private boolean isRunning = false;
 
     public String version = "";
-    public String onos1_9 = "";
-    public String onos1_6 = "";
-    public String onos1_1 = "";
+    public String ryu = "";
     public String sshAddr = "";
+    public String of_version = "";
 
     private int currentPID = -1;
 
@@ -26,16 +25,13 @@ public class ONOSHandler implements ControllerHandler {
 
     private Thread loggerThd;
 
-    public ONOSHandler(String path, String v, String ssh) {
+    public RyuHandler(String path, String v, String ssh, String of_version) {
         this.version = v;
         this.sshAddr = ssh;
-
-        String user = ssh.substring(0, ssh.indexOf('@'));
-        onos1_1 = "/home/" + user + "/Applications/apache-karaf-3.0.5/bin/karaf";
-//        onos1_6 = "/home/" + user + "/onos-1.6.0/bin/onos-service";
-//        onos1_9 = "/home/" + user + "/run-onos-delta";
+        this.of_version = of_version;
     }
 
+    @Override
     public boolean createController() {
         isRunning = false;
 
@@ -43,14 +39,17 @@ public class ONOSHandler implements ControllerHandler {
 
         String[] cmdArray = null;
 
-
+        // TODO: Simple_Switch app needs to be loaded according to the OpenFlow Version.
         try {
-            if (this.version.contains("1.1")) {
-                cmdArray = new String[]{"ssh", sshAddr, onos1_1, "clean"};
-            } else if (this.version.contains("1.6")) {
-                cmdArray = new String[]{System.getenv("DELTA_ROOT") + "/tools/dev/app-agent-setup/onos/delta-run-onos", "1.6"};
-            } else if (this.version.contains("1.9")) {
-                cmdArray = new String[]{System.getenv("DELTA_ROOT") + "/tools/dev/app-agent-setup/onos/delta-run-onos", "1.9"};
+            if (this.version.contains("4.16")) {
+                if (this.of_version.contains("1.0"))
+                    cmdArray = new String[]{System.getenv("DELTA_ROOT") + "/tools/dev/app-agent-setup/ryu/delta-run-ryu", "1.0"};
+                else if (this.of_version.contains("1.3"))
+                    cmdArray = new String[]{System.getenv("DELTA_ROOT") + "/tools/dev/app-agent-setup/ryu/delta-run-ryu", "1.3"};
+                else
+                    return false;
+            } else {
+                return false;
             }
 
             ProcessBuilder pb = new ProcessBuilder(cmdArray);
@@ -64,39 +63,25 @@ public class ONOSHandler implements ControllerHandler {
             Object value = pidField.get(proc);
             this.currentPID = (Integer) value;
 
-            stdIn = new BufferedWriter(new OutputStreamWriter(proc.getOutputStream()));
-//            stdOut = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            Thread.sleep(5000);
 
-            Thread.sleep(10000);
-
-            log.info("Waiting for ONOS launch..");
-            String line = null;
-            do {
-//                line = stdOut.readLine();
-                line = AgentLogger.getTemp();
-                Thread.sleep(500);
-            }
-            while (!line.contains("Welcome"));
-
-
-            stdIn.write("log:tail");
+            // TODO: This part will add to check whether Ryu application is complete.
 
             isRunning = true;
-            log.info("ONOS is activated");
+            log.info("Ryu is activated");
 
-            Process temp = Runtime.getRuntime().exec("ssh " + sshAddr + " sudo ps -ef | grep karaf");
+            Process temp = Runtime.getRuntime().exec("ssh " + sshAddr + " sudo ps -ef | grep ryu-manager");
             String tempS;
 
             BufferedReader stdOut2 = new BufferedReader(new InputStreamReader(temp.getInputStream()));
 
             while ((tempS = stdOut2.readLine()) != null && !tempS.isEmpty()) {
-                if (tempS.contains("apache-karaf")) {
+                if (tempS.contains("ryu-manager")) {
                     String[] list = StringUtils.split(tempS);
 
                     currentPID = Integer.parseInt(list[1]);
                 }
             }
-
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -107,10 +92,16 @@ public class ONOSHandler implements ControllerHandler {
         return true;
     }
 
+    @Override
+    public Process getProc() {
+        return this.proc;
+    }
+
+    @Override
     public void killController() {
         Process pc = null;
         try {
-            pc = Runtime.getRuntime().exec("ssh " + sshAddr + " sudo killall java");
+            pc = Runtime.getRuntime().exec("ssh " + sshAddr + " sudo killall ryu-manager");
             pc.getErrorStream().close();
             pc.getInputStream().close();
             pc.getOutputStream().close();
@@ -126,44 +117,33 @@ public class ONOSHandler implements ControllerHandler {
         this.currentPID = -1;
     }
 
-
-    public Process getProc() {
-        return this.proc;
-    }
-
-    /* ONOSHandler, AppAgent is automatically installed when the controller starts */
+    @Override
     public boolean installAppAgent() {
-
         return true;
     }
 
     @Override
     public String getType() {
-        // TODO Auto-generated method stub
-        return "ONOS";
+        return "Ryu";
     }
 
     @Override
     public String getVersion() {
-        // TODO Auto-generated method stub
         return this.version;
     }
 
     @Override
     public String getPath() {
-        // TODO Auto-generated method stub
-        return this.onos1_1;
+        return this.ryu;
     }
 
     @Override
     public int getPID() {
-        // TODO Auto-generated method stub
         return this.currentPID;
     }
 
     @Override
     public BufferedReader getStdOut() {
-        // TODO Auto-generated method stub
         return this.stdOut;
     }
 }

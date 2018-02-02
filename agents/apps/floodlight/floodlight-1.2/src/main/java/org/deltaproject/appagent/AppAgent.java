@@ -177,14 +177,8 @@ public class AppAgent implements IFloodlightModule, IOFMessageListener {
         linkDiscoveryService = context
                 .getServiceImpl(ILinkDiscoveryService.class);
 
-
         cm = new Interface(this);
-        cm.setServerAddr();
-        cm.connectServer("AppAgent");
         cm.start();
-
-        // TODO: to prevent noisy error messge
-
     }
 
     @Override
@@ -629,39 +623,60 @@ public class AppAgent implements IFloodlightModule, IOFMessageListener {
         return result;
     }
 
-    public String sendUnFlaggedFlowRemoveMsg() {
-        System.out.println("[App-Agent] Send UnFlagged Flow Remove Message");
+    public String sendUnFlaggedFlowRemoveMsg(String cmd, long ruleId) {
+        logger.info("[App-Agent] Send UnFlagged Flow Remove Message");
 
         OFFactory of = null;
+        IOFSwitch sw = null;
 
-        List<IOFSwitch> switches = new ArrayList<IOFSwitch>();
-        for (DatapathId sw : switchService.getAllSwitchDpids()) {
-            switches.add(switchService.getSwitch(sw));
-            of = switchService.getSwitch(sw).getOFFactory();
+        if (switchService.getAllSwitchDpids().iterator().hasNext()) {
+            sw = switchService.getSwitch(switchService.getAllSwitchDpids().iterator().next());
+            of = sw.getOFFactory();
+        } else {
+            return "no connected switch";
         }
 
-        if (switches.size() == 0)
-            return "nothing sw";
+        if (cmd.contains("install")) {
 
-        OFActionOutput.Builder aob = of.actions().buildOutput();
-        aob.setPort(OFPort.of(2));
-        List<OFAction> actions = new ArrayList<OFAction>();
-        actions.add(aob.build());
+            OFActionOutput.Builder aob = of.actions().buildOutput();
+            aob.setPort(OFPort.of(2));
+            List<OFAction> actions = new ArrayList<>();
+            actions.add(aob.build());
 
-        OFFlowMod.Builder fmb = of.buildFlowAdd();
+            OFFlowMod.Builder fmb = of.buildFlowAdd();
 
-        Match.Builder mb = of.buildMatch();
-        mb.setExact(MatchField.IN_PORT, OFPort.of(1));
-        //mb.setExact(MatchField.ETH_DST, MacAddress.of("00:00:00:00:00:11"));
-        //mb.setExact(MatchField.ETH_SRC, MacAddress.of("00:00:00:00:00:22"));
-        fmb.setMatch(mb.build());
-        fmb.setActions(actions);
-        fmb.setPriority(100);
+            Match.Builder mb = of.buildMatch();
+            mb.setExact(MatchField.IN_PORT, OFPort.of(1));
+            mb.setExact(MatchField.ETH_DST, MacAddress.of("00:00:00:00:00:11"));
+            mb.setExact(MatchField.ETH_SRC, MacAddress.of("00:00:00:00:00:22"));
+            fmb.setMatch(mb.build());
+            fmb.setActions(actions);
+            fmb.setPriority(555);
 
-        OFFlowMod msg = fmb.build();
-        switches.get(0).write(msg);
+            OFFlowMod msg = fmb.build();
+            sw.write(msg);
 
-        return msg.toString();
+            logger.info("install a flow {} to the device {}", msg, sw);
+
+            return "Installed flow rule id|";
+
+        } else if (cmd.contains("check")) {
+
+            Boolean result = true;
+
+            if (sw.getTables().iterator().hasNext()) {
+                TableId next = sw.getTables().iterator().next();
+
+            }
+
+            if (result) {
+                return "success";
+            } else {
+                return "fail";
+            }
+        }
+
+        return "fail";
     }
 
 

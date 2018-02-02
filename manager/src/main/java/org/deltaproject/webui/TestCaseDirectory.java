@@ -107,24 +107,30 @@ public class TestCaseDirectory {
                 new TestCase(CONTROL_PLANE_OF, "2.1.040", "Control Message before Hello Message (Main Connection)",
                         "Test for controller protection against control communication prior to completed connection " +
                                 "establishment"));
-        /*directory.put("2.1.050",
-                new TestCase(CONTROL_PLANE_OF, "2.1.050", "Multiple main connection request from same switch", "Test
-                for controller protection against multiple control requests"));*/
+        directory.put("2.1.050",
+                new TestCase(CONTROL_PLANE_OF, "2.1.050", "Multiple main connection request from same switch", "Test " +
+                        "for controller protection against multiple control requests"));
         directory.put("2.1.060",
                 new TestCase(CONTROL_PLANE_OF, "2.1.060", "no-flagged Flow Remove Message notification", "Test for " +
                         "controller protection against unacknowledged manipulation of the network"));
 
-        /*directory.put("2.1.070",
-                new TestCase(CONTROL_PLANE_OF, "2.1.070", "TLS Support", "Test for controller support for Transport
-                Layer Security"));
+        directory.put("2.1.070",
+                new TestCase(CONTROL_PLANE_OF, "2.1.070", "TLS Support", "Test for controller support for Transport " +
+                        "Layer Security"));
+
+        directory.put("2.1.080",
+                new TestCase(CONTROL_PLANE_OF, "2.1.080", "Auxiliary Connection Mismatch with main connection",
+                        "Test for check the notification to the operator of a mismatch between the auxiliary " +
+                                "connection transport and the main connection transport"));
+
+        /*
         directory.put("2.1.071",
                 new TestCase(CONTROL_PLANE_OF, "2.1.071", "Startup Behaviour with Failed TLS Connection"));
         directory.put("2.1.072",
                 new TestCase(CONTROL_PLANE_OF, "2.1.072", "Handling Invalid Authentication Credentials"));
         directory.put("2.1.073",
-                new TestCase(CONTROL_PLANE_OF, "2.1.073", "Handling Control Packet Modification"));
-        directory.put("2.1.080",
-                new TestCase(CONTROL_PLANE_OF, "2.1.080", "Auxiliary Connection Mismatch with main connection")); */
+                new TestCase(CONTROL_PLANE_OF, "2.1.073", "Handling Control Packet Modification")); */
+
 
         directory.put("3.1.010",
                 new TestCase(ADVANCED, "3.1.010", "Packet-In Flooding", "Test for controller protection against " +
@@ -138,9 +144,9 @@ public class TestCaseDirectory {
         directory.put("3.1.040",
                 new TestCase(ADVANCED, "3.1.040", "Internal Storage Abuse", "Test for controller protection against " +
                         "application manipulating network information base"));
-        /* directory.put("3.1.050",
-                new TestCase(ADVANCED, "3.1.050", "Switch Table Flooding", "Test for switch protection against switch
-                 table flooding")); */
+        directory.put("3.1.050",
+                new TestCase(ADVANCED, "3.1.050", "Switch Table Flooding", "Test for switch protection against switch " +
+                        "table flooding"));
         directory.put("3.1.060",
                 new TestCase(ADVANCED, "3.1.060", "Switch ID spoofing", "Test for switch protection against ID " +
                         "spoofing"));

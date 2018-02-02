@@ -345,13 +345,16 @@ public class DummyController extends Thread {
         } else if (handShakeType == NO_HANDSHAKE)
             return;
 
-        OFHelloElem.Builder heb = factory.buildHelloElemVersionbitmap();
-        List<OFHelloElem> list = new ArrayList<OFHelloElem>();
-        list.add(heb.build());
-
         OFHello.Builder fab = factory.buildHello();
         fab.setXid(xid);
-        fab.setElements(list);
+
+        if (version != OFVersion.OF_10) {
+            OFHelloElem.Builder heb = factory.buildHelloElemVersionbitmap();
+            List<OFHelloElem> list = new ArrayList<OFHelloElem>();
+            list.add(heb.build());
+            fab.setElements(list);
+        }
+
         OFHello hello = fab.build();
         sendMsg(hello, MINIMUM_LENGTH);
     }

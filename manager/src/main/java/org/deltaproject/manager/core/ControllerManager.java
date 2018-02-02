@@ -1,9 +1,6 @@
 package org.deltaproject.manager.core;
 
-import org.deltaproject.manager.handler.FloodlightHandler;
-import org.deltaproject.manager.handler.ONOSHandler;
-import org.deltaproject.manager.handler.OpenDaylightHandler;
-import org.deltaproject.manager.handler.ControllerHandler;
+import org.deltaproject.manager.handler.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,11 +37,13 @@ public class ControllerManager {
         ControllerHandler fl = new FloodlightHandler(cfg.getFLOODLIGHT_ROOT(), cfg.getTARGET_VERSION(), cfg.getCONTROLLER_SSH());
         ControllerHandler odl = new OpenDaylightHandler(cfg.getODL_ROOT(), cfg.getTARGET_VERSION(), cfg.getCONTROLLER_SSH());
         ControllerHandler onos = new ONOSHandler(cfg.getONOS_ROOT(), cfg.getTARGET_VERSION(), cfg.getCONTROLLER_SSH());
+        ControllerHandler ryu = new RyuHandler(cfg.getRYU_ROOT(), cfg.getTARGET_VERSION(), cfg.getCONTROLLER_SSH(), cfg.getOF_VERSION());
 
         targetList = new ArrayList<ControllerHandler>();
         targetList.add(fl);
         targetList.add(odl);
         targetList.add(onos);
+        targetList.add(ryu);
         switchList = new ArrayList<String>();
 
         connectedSwitches = new ArrayList<String>();

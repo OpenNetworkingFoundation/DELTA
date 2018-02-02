@@ -13,7 +13,7 @@ public class Main {
 
 		System.setProperty(SimpleLogger.SHOW_SHORT_LOG_NAME_KEY, "TRUE");
 		Interface amInterface = new Interface(args[0], args[1]);
-		amInterface.connectManager();
+//		amInterface.connectManager();
 
 		try {
 			Thread.sleep(1000);

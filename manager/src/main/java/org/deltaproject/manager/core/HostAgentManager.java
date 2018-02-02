@@ -144,6 +144,7 @@ public class HostAgentManager extends Thread {
     public void stopAgent() {
         try {
             if (dos != null) {
+                dos.writeUTF("close");
                 dos.close();
                 dos = null;
             }
@@ -161,10 +162,6 @@ public class HostAgentManager extends Thread {
 
         if (procPID != -1)
             try {
-                Runtime.getRuntime().exec("ssh " + cfg.getHOST_SSH() + " sudo arp -d " + cfg.getCONTROLLER_IP());
-                proc = Runtime.getRuntime().exec("sudo kill -9 " + this.procPID);
-                proc.waitFor();
-                procPID = -1;
 
                 if (cfg.getTopologyType().equals("VM")) {
                     Runtime.getRuntime().exec("ssh " + cfg.getHOST_SSH() + " sudo mn -c");

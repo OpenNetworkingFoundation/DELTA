@@ -17,6 +17,8 @@ public class Configuration {
     private String ONOS_VER = "";
     private String ONOS_KARAF_ROOT = "";
 
+    private String RYU_ROOT = "";
+
     private String CBENCH_ROOT = "";
 
     private String TARGET_CONTROLLER = "";
@@ -148,6 +150,9 @@ public class Configuration {
                     this.ONOS_KARAF_ROOT = temp
                             .substring(temp.indexOf("=") + 1);
 
+                if (temp.contains("RYU_ROOT"))
+                    this.RYU_ROOT = temp.substring(temp.indexOf("=") + 1);
+
                 if (temp.contains("CBENCH_ROOT"))
                     this.CBENCH_ROOT = temp.substring(temp.indexOf("=") + 1);
 
@@ -247,6 +252,7 @@ public class Configuration {
                 ", ONOS_ROOT='" + ONOS_ROOT + '\'' +
                 ", ONOS_VER='" + ONOS_VER + '\'' +
                 ", ONOS_KARAF_ROOT='" + ONOS_KARAF_ROOT + '\'' +
+                ", RYU_ROOT='" + RYU_ROOT + '\'' +
                 ", CBENCH_ROOT='" + CBENCH_ROOT + '\'' +
                 ", TARGET_CONTROLLER='" + TARGET_CONTROLLER + '\'' +
                 ", TARGET_VERSION='" + TARGET_VERSION + '\'' +
@@ -330,6 +336,14 @@ public class Configuration {
 
     public void setONOS_KARAF_ROOT(String ONOS_KARAF_ROOT) {
         this.ONOS_KARAF_ROOT = ONOS_KARAF_ROOT;
+    }
+
+    public void setRYU_ROOT(String RYU_ROOT) {
+        this.RYU_ROOT = RYU_ROOT;
+    }
+
+    public String getRYU_ROOT() {
+        return RYU_ROOT;
     }
 
     public String getCBENCH_ROOT() {

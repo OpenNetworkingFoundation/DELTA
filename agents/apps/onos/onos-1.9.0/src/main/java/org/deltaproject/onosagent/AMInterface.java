@@ -1,5 +1,7 @@
 package org.deltaproject.onosagent;
 
+import org.slf4j.Logger;
+
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -11,8 +13,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.Socket;
-import java.net.UnknownHostException;
+
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * An Agent Manager Interface of ONOS AppAgent.
@@ -27,6 +31,7 @@ public class AMInterface extends Thread {
     private DataOutputStream dos;
     private String serverIP;
     private int serverPort;
+    private final Logger log = getLogger(getClass());
 
     public AMInterface(AppAgent in) {
         this.app = in;
@@ -79,24 +84,15 @@ public class AMInterface extends Thread {
         }
     }
 
-    public void connectServer(String agent) {
-        try {
-            socket = new Socket(serverIP, serverPort);
-            in = socket.getInputStream();
-            dis = new DataInputStream(in);
-            out = socket.getOutputStream();
-            dos = new DataOutputStream(out);
+    public void connectServer(String agent) throws Exception {
+        socket = new Socket(serverIP, serverPort);
+        in = socket.getInputStream();
+        dis = new DataInputStream(in);
+        out = socket.getOutputStream();
+        dos = new DataOutputStream(out);
 
-            dos.writeUTF(agent);
-            dos.flush();
-
-        } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        dos.writeUTF(agent);
+        dos.flush();
     }
 
     public void write(String input) {
@@ -156,8 +152,16 @@ public class AMInterface extends Thread {
             result = app.testSwitchFirmwareMisuse();
             dos.writeUTF(result);
         } else if (recv.contains("2.1.060")) {
-            result = app.sendUnFlaggedFlowRemoveMsg();
+
+            String cmd = null;
+            if (recv.contains("install")) {
+                result = app.sendUnFlaggedFlowRemoveMsg("install", 0);
+            } else if (recv.contains("check")) {
+                long ruleId = Long.parseLong(recv.split("\\|")[2]);
+                result = app.sendUnFlaggedFlowRemoveMsg("check", ruleId);
+            }
             dos.writeUTF(result);
+
         } else if (recv.contains("test")) {
 
             return;
@@ -172,33 +176,46 @@ public class AMInterface extends Thread {
 
     @Override
     public void run() {
-        // TODO Auto-generated method stub
         String recv = "";
 
-        try {
-            while ((recv = dis.readUTF()) != null) {
-                // reads characters encoded with modified UTF-8
-                if (recv.contains("umode")) {
-                    findingUnkwonAttack(recv);
-                } else if (recv.contains("echo")) {
-                    System.out.println("[App-Agent] Received " + recv);
-                    write("echo");
-                } else {
-                    replayingKnownAttack(recv);
+        while (true) {
+            try {
+                this.setServerAddr();
+                this.connectServer("AppAgent");
+                while (true) {
+                    recv = dis.readUTF();
+                    log.info("[App-Agent] Received " + recv);
+                    if (recv.contains("umode")) {
+                        findingUnkwonAttack(recv);
+                    } else if (recv.contains("echo")) {
+                        write("echo");
+                    } else {
+                        replayingKnownAttack(recv);
+                    }
+                }
+            } catch (ConnectException e) {
+                log.error("[App-Agent] Agent Manager is not listening");
+            } catch (EOFException e) {
+                // if any error occurs
+                log.info("[App-Agent] Closing...");
+            } catch (Exception e) {
+                log.error(e.toString());
+            } finally {
+                try {
+                    if (dis != null) {
+                        dis.close();
+                    }
+                    if (dos != null) {
+                        dos.close();
+                    }
+                } catch (IOException e) {
+                    log.error(e.toString());
                 }
             }
-        } catch (EOFException e) {
-            System.out.println("[App-Agent] Closing...");
-        } catch (Exception e) {
-            // if any error occurs
-//            e.printStackTrace();
-        } finally {
             try {
-                dis.close();
-                dos.close();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-//                e.printStackTrace();
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                log.error(e.toString());
             }
         }
     }

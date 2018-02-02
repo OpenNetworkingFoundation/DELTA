@@ -4,14 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.ConnectException;
 import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.Enumeration;
-import java.util.Properties;
-import java.util.StringTokenizer;
 
 public class Interface extends Thread {
-    protected static Logger logger = LoggerFactory.getLogger(Interface.class);
+    protected static Logger log = LoggerFactory.getLogger(Interface.class);
 
     int result = 1;
 
@@ -57,41 +54,28 @@ public class Interface extends Thread {
                     this.serverPort = Integer.parseInt(temp.substring(temp.indexOf("=") + 1));
             }
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            log.error(e.toString());
         } finally {
             try {
                 fis.close();
                 isr.close();
                 br.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error(e.toString());
             }
         }
     }
 
-    public void connectServer(String agent) {
-        try {
-            socket = new Socket(serverIP, serverPort);
-            in = socket.getInputStream();
-            dis = new DataInputStream(in);
-            out = socket.getOutputStream();
-            dos = new DataOutputStream(out);
+    public void connectServer(String agent) throws Exception {
+        socket = new Socket(serverIP, serverPort);
+        in = socket.getInputStream();
+        dis = new DataInputStream(in);
+        out = socket.getOutputStream();
+        dos = new DataOutputStream(out);
 
-            dos.writeUTF(agent);
-            dos.flush();
-
-        } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        dos.writeUTF(agent);
+        dos.flush();
     }
 
     public void write(String in) {
@@ -99,13 +83,12 @@ public class Interface extends Thread {
             dos.writeUTF(in);
             dos.flush();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.error(e.toString());
         }
     }
 
     public void replayingKnownAttack(String recv) throws IOException {
-        String result;
+        String result = "";
 
         if (recv.equals("3.1.020")) {
             app.setControlMessageDrop();
@@ -154,7 +137,13 @@ public class Interface extends Thread {
             result = app.testSwitchFirmwareMisuse();
             dos.writeUTF(result);
         } else if (recv.contains("2.1.060")) {
-            result = app.sendUnFlaggedFlowRemoveMsg();
+            String cmd = null;
+            if (recv.contains("install")) {
+                result = app.sendUnFlaggedFlowRemoveMsg("install", 0);
+            } else if (recv.contains("check")) {
+                long ruleId = Long.parseLong(recv.split("\\|")[2]);
+                result = app.sendUnFlaggedFlowRemoveMsg("check", ruleId);
+            }
             dos.writeUTF(result);
         } else if (recv.contains("echo")) {
             dos.writeUTF("echo");
@@ -165,29 +154,38 @@ public class Interface extends Thread {
 
     @Override
     public void run() {
-        // TODO Auto-generated method stub
         String recv;
-        try {
-            while (true) {
-                recv = dis.readUTF();
-                replayingKnownAttack(recv);
-            }
-//            while ((recv = dis.readUTF()) != null) {
-//                // reads characters encoded with modified UTF-8
-//                replayingKnownAttack(recv);
-//            }
-        } catch (Exception e) {
-            logger.info("in run");
-            // if any error occurs
-            // e.printStackTrace();
-        } finally {
-            try {
-                dis.close();
-                dos.close();
-            } catch (IOException e) {
 
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+        while (true) {
+            try {
+                this.setServerAddr();
+                this.connectServer("AppAgent");
+                while (true) {
+                    recv = dis.readUTF();
+                    log.info("[App-Agent] Received " + recv);
+                    replayingKnownAttack(recv);
+                }
+            } catch (ConnectException e) {
+                log.error("[App-Agent] Agent Manager is not listening");
+            } catch (Exception e) {
+                log.error(e.toString());
+            } finally {
+                try {
+                    if (dis != null) {
+                        dis.close();
+                    }
+
+                    if (dos != null) {
+                        dos.close();
+                    }
+                } catch (IOException e) {
+                    log.error(e.toString());
+                }
+            }
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                log.error(e.toString());
             }
         }
     }
