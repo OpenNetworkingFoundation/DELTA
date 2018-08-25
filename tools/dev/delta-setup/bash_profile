@@ -29,3 +29,4 @@ export PATH="$PATH:$MAVEN/bin"
 export DELTA_CP=ubuntu@10.0.3.11
 export DELTA_CH=ubuntu@10.0.3.12
 export DELTA_DP=ubuntu@10.0.3.13
+export DELTA_APP=ubuntu@10.0.3.11
