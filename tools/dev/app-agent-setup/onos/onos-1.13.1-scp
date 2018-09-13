@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-onos_version=1.13.1
-karaf_version=3.0.8
-
-# copy delta app agent
-scp $DELTA_ROOT/agents/apps/onos/onos-$onos_version/target/delta-agent-app-onos-$onos_version-1.0-SNAPSHOT.jar $DELTA_CP:~
-ssh $DELTA_CP cp delta-agent-app-onos-$onos_version-1.0-SNAPSHOT.jar onos-$onos_version/apache-karaf-$karaf_version/deploy/

@@ -1,8 +1,0 @@
-#!/bin/bash
-#
-# Script to distribute the compiled files to VMs
-#
-
-# for Floodlight
-scp $DELTA_ROOT/agents/apps/floodlight/floodlight-1.1/target/floodlight.jar $DELTA_CP:~/floodlight-1.1.jar
-scp $DELTA_ROOT/agents/apps/floodlight/floodlight-1.1/src/main/resources/floodlightdefault.properties $DELTA_CP:~/floodlightcase1.properties

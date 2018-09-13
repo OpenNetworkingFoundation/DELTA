@@ -1,3 +1,0 @@
-feature:install odl-l2switch-all odl-dlux-core features-dluxapps
-feature:install odl-l2switch-all odl-l2switch-switch-rest odl-l2switch-switch-ui features-l2switch
-feature:install odl-dlux-core features-dlux features-dluxapps
