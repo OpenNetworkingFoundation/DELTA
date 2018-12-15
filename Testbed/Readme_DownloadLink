@@ -2,3 +2,6 @@ This folder includes a prebuilt VM that was used to test the DELTA code, It'll m
 Issues faced while building this tesbed were mainly related to different versions of python, linux and lxc tools used. 
 The testbed is built to use opendaylight as a controller, but you can change that as per DELTA guidelines and that should work fine too.
 If you faced issues with this testbed let me know. 
+
+You can use this link to download the testbed VM: 
+https://drive.google.com/open?id=1OssZZP6bp-5sA06tDrM95hWA0zBomgDc
